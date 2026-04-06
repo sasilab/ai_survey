@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Tamil Nadu AI Literacy Survey · தமிழ்நாடு AI ஆய்வு</title>
+
+<!-- ═══════════════════════════════════════════════════════
+     APPWRITE CONFIG — paste your IDs here
+     ═══════════════════════════════════════════════════════ -->
+<script>
+  const AW_ENDPOINT    = 'https://cloud.appwrite.io/v1';
+  const AW_PROJECT_ID  = 'PASTE_YOUR_PROJECT_ID_HERE';
+  const AW_DATABASE_ID = 'PASTE_YOUR_DATABASE_ID_HERE';
+  const AW_COLLECTION  = 'PASTE_YOUR_COLLECTION_ID_HERE';
+</script>
+
+<style>
+/* ── reset & base ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #ffffff;
+  --surface: #f7f7f7;
+  --border: #e5e5e5;
+  --text: #0f0f0f;
+  --muted: #737373;
+  --accent: #0f0f0f;
+  --accent-inv: #ffffff;
+  --danger: #c0392b;
+  --radius: 10px;
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  --tamil-font: 'Noto Sans Tamil', 'Latha', 'Tamil MN', sans-serif;
+}
+html, body { height: 100%; overflow: hidden; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── progress bar ── */
+#progress-bar {
+  position: fixed; top: 0; left: 0;
+  height: 3px; background: var(--accent);
+  transition: width .4s ease; z-index: 100;
+  border-radius: 0 2px 2px 0;
+}
+
+/* ── top bar ── */
+#topbar {
+  position: fixed; top: 0; left: 0; right: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 24px 0;
+  z-index: 99;
+  pointer-events: none;
+}
+#q-counter { font-size: 12px; color: var(--muted); pointer-events: none; }
+#lang-switcher {
+  display: flex; gap: 6px; pointer-events: all;
+}
+.lang-btn {
+  padding: 4px 12px; border-radius: 20px; font-size: 11.5px;
+  border: 1px solid var(--border); background: var(--bg);
+  color: var(--muted); cursor: pointer;
+  transition: all .15s; font-family: var(--font);
+}
+.lang-btn.active {
+  background: var(--accent); color: var(--accent-inv);
+  border-color: var(--accent);
+}
+.lang-btn:hover:not(.active) { border-color: #aaa; color: var(--text); }
+
+/* ── main stage ── */
+#stage {
+  position: fixed; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  padding: 72px 24px 80px;
+  overflow: hidden;
+}
+
+/* ── slide ── */
+.slide {
+  position: absolute;
+  width: 100%; max-width: 640px;
+  opacity: 0; pointer-events: none;
+  transform: translateY(24px);
+  transition: opacity .28s ease, transform .28s ease;
+  will-change: transform, opacity;
+}
+.slide.active {
+  opacity: 1; pointer-events: all;
+  transform: translateY(0);
+}
+.slide.exit-up   { opacity: 0; transform: translateY(-28px); }
+.slide.exit-down { opacity: 0; transform: translateY(28px); }
+
+/* ── sketch zone ── */
+.sketch-zone {
+  width: 100%; margin-bottom: 28px;
+  border-radius: var(--radius); overflow: hidden;
+  min-height: 140px;
+  display: flex; align-items: center; justify-content: center;
+}
+.sketch-zone img {
+  width: 100%; display: block;
+  border-radius: var(--radius);
+}
+.sketch-zone.placeholder {
+  border: 2px dashed var(--border);
+  background: var(--surface); min-height: 140px;
+  flex-direction: column; gap: 8px;
+}
+.sketch-zone.placeholder::after {
+  font-size: 12px; color: var(--muted);
+  text-align: center; padding: 0 16px;
+}
+
+/* cover sketch */
+.sketch-cover { min-height: 180px; margin-bottom: 32px; }
+.sketch-cover.placeholder::after { content: '🎨  sketches/cover.png  (1200×360px)'; }
+.sketch-s1.placeholder::after  { content: '🎨  sketches/section-1.png  (800×200px)'; }
+.sketch-s2.placeholder::after  { content: '🎨  sketches/section-2.png  (800×200px)'; }
+.sketch-s3.placeholder::after  { content: '🎨  sketches/section-3.png  (800×200px)'; }
+.sketch-s4.placeholder::after  { content: '🎨  sketches/section-4.png  (800×200px)'; }
+.sketch-s5.placeholder::after  { content: '🎨  sketches/section-5.png  (800×200px)'; }
+.sketch-s6.placeholder::after  { content: '🎨  sketches/section-6.png  (800×200px)'; }
+.sketch-s7.placeholder::after  { content: '🎨  sketches/section-7.png  (800×200px)'; }
+.sketch-s8.placeholder::after  { content: '🎨  sketches/section-8.png  (800×200px)'; }
+
+/* ── section label ── */
+.sec-label {
+  font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 10px;
+}
+
+/* ── question text ── */
+.q-text {
+  font-size: clamp(20px, 4vw, 27px);
+  font-weight: 600; line-height: 1.38;
+  color: var(--text); margin-bottom: 8px;
+}
+.q-sub {
+  font-size: 14px; color: var(--muted);
+  line-height: 1.6; margin-bottom: 24px;
+}
+.q-text.ta, .q-sub.ta, .opt-label.ta {
+  font-family: var(--tamil-font);
+}
+
+/* ── options ── */
+.opts { display: flex; flex-direction: column; gap: 8px; margin-top: 20px; }
+.opt {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px; border-radius: var(--radius);
+  border: 1.5px solid var(--border); background: var(--bg);
+  cursor: pointer; transition: all .14s;
+  font-size: 15px; color: var(--text); text-align: left;
+  width: 100%; font-family: var(--font);
+}
+.opt.ta { font-family: var(--tamil-font); font-size: 14px; }
+.opt:hover { border-color: #aaa; background: var(--surface); }
+.opt.selected {
+  border-color: var(--accent); background: var(--accent);
+  color: var(--accent-inv);
+}
+.opt-circle {
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 2px solid currentColor; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .14s;
+}
+.opt-sq {
+  width: 18px; height: 18px; border-radius: 4px;
+  border: 2px solid currentColor; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.opt.selected .opt-circle::after {
+  content: ''; width: 7px; height: 7px;
+  border-radius: 50%; background: currentColor;
+}
+.opt.selected .opt-sq::after {
+  content: '✓'; font-size: 11px; line-height: 1;
+}
+.opt-label { flex: 1; line-height: 1.45; }
+
+/* scale */
+.scale-wrap { margin-top: 20px; }
+.scale-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.scale-btn {
+  width: 52px; height: 52px; border-radius: var(--radius);
+  border: 1.5px solid var(--border); background: var(--bg);
+  font-size: 16px; font-weight: 500; cursor: pointer;
+  transition: all .14s; color: var(--text); font-family: var(--font);
+}
+.scale-btn:hover { border-color: #aaa; background: var(--surface); }
+.scale-btn.selected {
+  background: var(--accent); color: var(--accent-inv);
+  border-color: var(--accent);
+}
+.scale-labels {
+  display: flex; justify-content: space-between;
+  margin-top: 8px; font-size: 12px; color: var(--muted);
+}
+.scale-labels.ta { font-family: var(--tamil-font); font-size: 11px; }
+
+/* textarea */
+.q-textarea {
+  width: 100%; margin-top: 20px;
+  padding: 14px 16px; border-radius: var(--radius);
+  border: 1.5px solid var(--border); background: var(--surface);
+  font-size: 15px; font-family: var(--font); color: var(--text);
+  resize: none; min-height: 120px; line-height: 1.6;
+  transition: border-color .14s;
+}
+.q-textarea:focus { outline: none; border-color: var(--accent); }
+
+/* ── bottom bar ── */
+#bottombar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 24px;
+  background: linear-gradient(to top, var(--bg) 70%, transparent);
+}
+#btn-back {
+  font-size: 13px; color: var(--muted); background: none;
+  border: none; cursor: pointer; padding: 8px 0;
+  font-family: var(--font);
+}
+#btn-back:hover { color: var(--text); }
+#btn-next {
+  padding: 13px 28px; border-radius: var(--radius);
+  background: var(--accent); color: var(--accent-inv);
+  border: none; font-size: 15px; font-weight: 500;
+  cursor: pointer; font-family: var(--font);
+  transition: opacity .15s, transform .1s;
+}
+#btn-next:hover { opacity: .85; }
+#btn-next:active { transform: scale(.98); }
+#enter-hint {
+  font-size: 11.5px; color: #bbb;
+  position: fixed; bottom: 64px; right: 24px;
+}
+
+/* ── trap badge ── */
+.trap-badge {
+  display: inline-block; font-size: 10px; padding: 2px 8px;
+  border-radius: 6px; background: #fff3e0; color: #b85c00;
+  font-weight: 600; margin-bottom: 10px; letter-spacing: .04em;
+}
+
+/* ── welcome / thank-you slides ── */
+.cover-title {
+  font-size: clamp(26px, 5vw, 36px);
+  font-weight: 700; line-height: 1.25; margin-bottom: 12px;
+}
+.cover-sub {
+  font-size: 16px; color: var(--muted); line-height: 1.7;
+  margin-bottom: 28px;
+}
+.cover-sub.ta { font-family: var(--tamil-font); }
+.start-btn {
+  padding: 15px 36px; border-radius: var(--radius);
+  background: var(--accent); color: var(--accent-inv);
+  border: none; font-size: 16px; font-weight: 500;
+  cursor: pointer; font-family: var(--font);
+  transition: opacity .15s;
+}
+.start-btn:hover { opacity: .85; }
+.done-icon { font-size: 48px; margin-bottom: 16px; }
+
+/* ── error ── */
+#err-msg {
+  font-size: 13px; color: var(--danger);
+  min-height: 18px; margin-top: 10px;
+}
+
+/* ── mobile tweaks ── */
+@media (max-width: 480px) {
+  #stage { padding: 64px 16px 72px; }
+  .scale-btn { width: 46px; height: 46px; font-size: 14px; }
+  #topbar { padding: 14px 16px 0; }
+  #bottombar { padding: 14px 16px; }
+  .lang-btn { padding: 3px 9px; font-size: 11px; }
+}
+</style>
+</head>
+<body>
+
+<div id="progress-bar" style="width:0%"></div>
+
+<div id="topbar">
+  <span id="q-counter"></span>
+  <div id="lang-switcher">
+    <button class="lang-btn active" onclick="setLang('en',this)">English</button>
+    <button class="lang-btn" onclick="setLang('ta',this)">தமிழ்</button>
+    <button class="lang-btn" onclick="setLang('tg',this)">Tanglish</button>
+  </div>
+</div>
+
+<div id="stage"></div>
+
+<div id="bottombar">
+  <button id="btn-back" onclick="go(-1)">← Back</button>
+  <div id="err-msg"></div>
+  <button id="btn-next" onclick="next()">Next →</button>
+</div>
+<div id="enter-hint">Press Enter ↵</div>
+
+<!-- Appwrite SDK -->
+<script src="https://cdn.jsdelivr.net/npm/appwrite@17/dist/iife/sdk.js"></script>
+
+<script>
+/* ══════════════════════════════════════════════════════════════
+   QUESTION DATA
+   Each question: id, type (radio|check|scale|text),
+   sec (section name — shown once at start of section),
+   sketch (css class for sketch zone — shown on first Q of section),
+   trap, q{en,ta,tg}, sub{en,ta,tg}, opts[], low{}, high{}
+══════════════════════════════════════════════════════════════ */
+const SLIDES = [
+
+/* ── WELCOME ── */
+{ id:'welcome', type:'welcome' },
+
+/* ══ SECTION 1 ══ */
+{ id:1, type:'radio',
+  sec:{en:'About You', ta:'உங்களைப் பற்றி', tg:'உங்களைப் பத்தி'},
+  sketch:'sketch-s1',
+  q:{en:'What is your age group?',
+     ta:'உங்கள் வயது வரம்பு என்ன?',
+     tg:'உங்கள் age group என்ன?'},
+  opts:[{en:'Under 15',  ta:'15 வயதிற்கு கீழ்',   tg:'15 வயதுக்கு கீழ்'},
+        {en:'15 – 18',   ta:'15 – 18',              tg:'15 – 18'},
+        {en:'19 – 24',   ta:'19 – 24',              tg:'19 – 24'},
+        {en:'25 – 35',   ta:'25 – 35',              tg:'25 – 35'},
+        {en:'35+',       ta:'35+',                  tg:'35+'}]},
+
+{ id:2, type:'radio',
+  q:{en:'What best describes you right now?',
+     ta:'இப்போது உங்களை எது சிறப்பாக விவரிக்கிறது?',
+     tg:'இப்போது உங்களை எப்படி describe பண்ணலாம்?'},
+  opts:[{en:'School student',       ta:'பள்ளி மாணவர்',             tg:'School student'},
+        {en:'College student',      ta:'கல்லூரி மாணவர்',           tg:'College student'},
+        {en:'Working professional', ta:'வேலை செய்பவர்',            tg:'Working professional'},
+        {en:'Business owner',       ta:'தொழிலதிபர்',               tg:'Business owner'},
+        {en:'Homemaker',            ta:'இல்லத்தரசி / இல்லத்தரசர்', tg:'Homemaker'},
+        {en:'Other',                ta:'மற்றவை',                    tg:'வேற ஏதாவது'}]},
+
+{ id:3, type:'radio',
+  q:{en:'Where do you currently live?',
+     ta:'நீங்கள் தற்போது எங்கே வசிக்கிறீர்கள்?',
+     tg:'நீங்கள் இப்போ எங்க இருக்கீங்க?'},
+  opts:[{en:'City (Chennai, Coimbatore, Madurai…)', ta:'நகரம் (சென்னை, கோயம்புத்தூர், மதுரை…)',  tg:'City (Chennai, Coimbatore, Madurai…)'},
+        {en:'Town / semi-urban',                    ta:'சிறு நகரம் / அரை நகர்ப்புறம்',             tg:'Town / semi-urban'},
+        {en:'Village / rural',                      ta:'கிராமம் / கிராமப்புறம்',                     tg:'கிராமம் / rural area'}]},
+
+{ id:4, type:'radio',
+  q:{en:'What is your highest level of education?',
+     ta:'உங்கள் உயர்ந்த கல்வி தகுதி என்ன?',
+     tg:'உங்கள் highest education என்ன?'},
+  opts:[{en:'Up to 10th grade',       ta:'10-ம் வகுப்பு வரை',        tg:'10th grade வரை'},
+        {en:'12th / Higher Secondary', ta:'12-ம் வகுப்பு / மேல்நிலை', tg:'12th / Higher Secondary'},
+        {en:'Diploma / ITI',           ta:'டிப்ளமோ / ஐ.டி.ஐ.',        tg:'Diploma / ITI'},
+        {en:"Bachelor's degree",       ta:'இளங்கலை பட்டம்',            tg:"Bachelor's degree"},
+        {en:'Postgraduate or higher',  ta:'முதுகலை / உயர் கல்வி',      tg:'Postgraduate or higher'}]},
+
+{ id:5, type:'radio',
+  q:{en:'Which language are you most comfortable reading in?',
+     ta:'நீங்கள் எந்த மொழியில் படிக்க மிகவும் வசதியாக உணர்கிறீர்கள்?',
+     tg:'நீங்கள் எந்த மொழியில் படிக்க comfortable-ஆ இருக்கீங்க?'},
+  opts:[{en:'Tamil only',               ta:'தமிழ் மட்டும்',                    tg:'தமிழ் மட்டும்'},
+        {en:'English only',             ta:'ஆங்கிலம் மட்டும்',                 tg:'English மட்டும்'},
+        {en:'Both Tamil and English',   ta:'தமிழ் மற்றும் ஆங்கிலம் இரண்டும்',  tg:'தமிழ் and English இரண்டும்'},
+        {en:'Tanglish (mixed)',         ta:'தங்கிலீஷ் (கலந்து)',               tg:'Tanglish (mix பண்ணி)'}]},
+
+/* ══ SECTION 2 ══ */
+{ id:6, type:'radio',
+  sec:{en:'Tech Comfort', ta:'தொழில்நுட்ப வசதி', tg:'Tech Comfort'},
+  sketch:'sketch-s2',
+  q:{en:'What device do you use most often to go online?',
+     ta:'இணையத்தில் இணைய நீங்கள் அதிகமாக எந்த சாதனத்தை பயன்படுத்துகிறீர்கள்?',
+     tg:'Online போக நீங்கள் mostly எந்த device use பண்றீங்க?'},
+  opts:[{en:'Smartphone',              ta:'ஸ்மார்ட்போன்',              tg:'Smartphone'},
+        {en:'Shared family phone',     ta:'பகிர்ந்த குடும்ப தொலைபேசி', tg:'Family-ஓட shared phone'},
+        {en:'Laptop / computer',       ta:'மடிக்கணினி / கணினி',        tg:'Laptop / computer'},
+        {en:'No device of my own',     ta:'என்னுடையது இல்லை',          tg:'என்னுடைய device இல்லை'}]},
+
+{ id:7, type:'scale',
+  q:{en:'How comfortable are you using a smartphone for daily tasks?',
+     ta:'அன்றாட பணிகளுக்கு ஸ்மார்ட்போன் பயன்படுத்துவதில் எவ்வளவு வசதியாக இருக்கிறீர்கள்?',
+     tg:'Daily tasks-க்கு smartphone use பண்றது எவ்வளவு comfortable?'},
+  low:{en:'Not at all', ta:'வசதியில்லை',     tg:'Comfortable இல்லை'},
+  high:{en:'Very comfortable', ta:'மிகவும் வசதியாக', tg:'மிகவும் comfortable'}},
+
+{ id:8, type:'check',
+  q:{en:'Which apps do you use regularly?',
+     ta:'நீங்கள் தொடர்ந்து பயன்படுத்தும் ஆப்ஸ் எவை?',
+     tg:'நீங்கள் regularly use பண்ற apps எவை?'},
+  opts:[{en:'WhatsApp',               ta:'WhatsApp',               tg:'WhatsApp'},
+        {en:'YouTube',                ta:'YouTube',                tg:'YouTube'},
+        {en:'Instagram / Facebook',   ta:'Instagram / Facebook',   tg:'Instagram / Facebook'},
+        {en:'Google Search',          ta:'Google Search',          tg:'Google Search'},
+        {en:'Online shopping apps',   ta:'ஆன்லைன் ஷாப்பிங் ஆப்ஸ்', tg:'Online shopping apps'},
+        {en:'Banking / UPI apps',     ta:'வங்கி / UPI ஆப்ஸ்',      tg:'Banking / UPI apps'}]},
+
+{ id:9, type:'radio',
+  q:{en:'How reliable is your internet connection at home?',
+     ta:'வீட்டில் உங்கள் இணைய இணைப்பு எவ்வளவு நம்பகமானது?',
+     tg:'வீட்ல உங்கள் internet connection எவ்வளவு reliable-ஆ இருக்கு?'},
+  opts:[{en:'Always fast and stable',      ta:'எப்போதும் வேகமாகவும் நிலையானதாகவும்', tg:'எப்பவும் fast and stable'},
+        {en:'Mostly fine, sometimes slow', ta:'பெரும்பாலும் சரி, சில நேரம் மெதுவாக',  tg:'பெரும்பாலும் fine, சில நேரம் slow'},
+        {en:'Often slow or disconnects',   ta:'அடிக்கடி மெதுவாக அல்லது துண்டிக்கும்', tg:'அடிக்கடி slow ஆகும், disconnect ஆகும்'},
+        {en:'No internet at home',         ta:'வீட்டில் இணையம் இல்லை',                tg:'வீட்ல internet இல்லை'}]},
+
+/* ══ SECTION 3 ══ */
+{ id:10, type:'radio',
+  sec:{en:'AI Awareness', ta:'AI விழிப்புணர்வு', tg:'AI Awareness'},
+  sketch:'sketch-s3',
+  q:{en:'Where did you first hear about AI tools like ChatGPT?',
+     ta:'ChatGPT போன்ற AI கருவிகளைப் பற்றி முதலில் எங்கே கேட்டீர்கள்?',
+     tg:'ChatGPT மாதிரி AI tools பத்தி முதல்ல எங்க கேட்டீங்க?'},
+  opts:[{en:'YouTube / social media', ta:'YouTube / சமூக வலைத்தளம்',        tg:'YouTube / social media'},
+        {en:'Friends or family',      ta:'நண்பர்கள் அல்லது குடும்பம்',      tg:'நண்பர்கள் or family'},
+        {en:'School / college',       ta:'பள்ளி / கல்லூரி',                  tg:'School / college'},
+        {en:'News or articles',       ta:'செய்தி அல்லது கட்டுரைகள்',         tg:'News or articles'},
+        {en:"Haven't heard of it",    ta:'கேட்டதில்லை',                      tg:'நான் கேட்டதே இல்லை'}]},
+
+{ id:11, type:'check',
+  q:{en:'Which AI tools have you tried?',
+     ta:'நீங்கள் எந்த AI கருவிகளை முயற்சித்தீர்கள்?',
+     tg:'நீங்கள் எந்த AI tools try பண்ணீங்க?'},
+  opts:[{en:'ChatGPT',                      ta:'ChatGPT',                             tg:'ChatGPT'},
+        {en:'Google Gemini',                 ta:'Google Gemini',                       tg:'Google Gemini'},
+        {en:'Microsoft Copilot',             ta:'Microsoft Copilot',                   tg:'Microsoft Copilot'},
+        {en:'Siri / Google Assistant',       ta:'Siri / Google Assistant',             tg:'Siri / Google Assistant'},
+        {en:'AI image tools (Midjourney…)',  ta:'AI படம் கருவிகள்',                   tg:'AI image tools'},
+        {en:'None — never tried any',        ta:'எதுவும் இல்லை — முயற்சிக்கவில்லை',  tg:'எதுவும் இல்லை — try பண்ணலை'}]},
+
+{ id:12, type:'radio',
+  q:{en:'When you tried an AI tool, what happened?',
+     ta:'நீங்கள் ஒரு AI கருவியை முயற்சித்தபோது என்ன நடந்தது?',
+     tg:'AI tool try பண்ணபோ என்ன ஆச்சு?'},
+  opts:[{en:'It was helpful, I kept using it',    ta:'பயனுள்ளதாக இருந்தது, தொடர்கிறேன்',            tg:'Useful-ஆ இருந்துச்சு, தொடர்ந்து use பண்றேன்'},
+        {en:'Tried once but stopped',             ta:'ஒரு முறை முயற்சித்தேன், நிறுத்தினேன்',        tg:'ஒரு தடவை try பண்ணேன், விட்டுட்டேன்'},
+        {en:"Couldn't understand how to use it",  ta:'எப்படி பயன்படுத்துவது என்று புரியவில்லை',    tg:'எப்படி use பண்றதுன்னு புரியலை'},
+        {en:'Everything was English — gave up',   ta:'எல்லாமே ஆங்கிலத்தில் — விட்டுவிட்டேன்',      tg:'எல்லாமே English-ல இருந்துச்சு — விட்டுட்டேன்'},
+        {en:"Haven't tried any AI tool",          ta:'எந்த AI கருவியும் முயற்சிக்கவில்லை',         tg:'எந்த AI tool-உம் try பண்ணலை'}]},
+
+{ id:13, type:'radio',
+  q:{en:'What was your first reaction when you heard about AI?',
+     ta:'AI பற்றி கேட்டபோது உங்கள் முதல் எதிர்வினை என்ன?',
+     tg:'AI பத்தி கேட்டவுடனே உங்களுக்கு என்ன feel ஆச்சு?'},
+  opts:[{en:'Excited — wanted to try immediately', ta:'உற்சாகமாக இருந்தது — உடனே முயற்சிக்க வேண்டும்', tg:'Excited-ஆ இருந்துச்சு — உடனே try பண்ணணும்னு தோணுச்சு'},
+        {en:'Curious but unsure how to start',    ta:'ஆர்வமாக இருந்தது, எங்கிருந்து தொடங்குவது தெரியவில்லை', tg:'Curious-ஆ இருந்துச்சு, ஆனா எங்க start பண்றதுன்னு தெரியலை'},
+        {en:'Scared — worried about job loss',    ta:'பயமாக இருந்தது — வேலைகளை பறிக்கும் என்று கவலைப்பட்டேன்', tg:'பயமா இருந்துச்சு — jobs போய்டும்னு worry ஆச்சு'},
+        {en:"Confused — didn't understand",       ta:'குழப்பமாக இருந்தது — என்னவென்று புரியவில்லை',  tg:'Confused ஆச்சு — என்ன இதுன்னு புரியலை'},
+        {en:"Didn't care much",                   ta:'அதிகம் அக்கறை இல்லை',                          tg:'Periya concern இல்லை'}]},
+
+/* ── ATTENTION CHECK (between Q13 and Q14) ── */
+{ id:'ac', type:'radio', trap:'attention', correctIdx:1,
+  q:{en:'To make sure you\'re reading carefully — which of these is a video platform?',
+     ta:'நீங்கள் கவனமாக படிக்கிறீர்கள் என்பதை உறுதிப்படுத்த — இவற்றில் எது ஒரு வீடியோ தளம்?',
+     tg:'நீங்கள் கவனமாக படிக்கீங்களன்னு check பண்ண — இதுல எது ஒரு video platform?'},
+  sub:{en:'Select the correct answer to continue.',
+       ta:'தொடர சரியான பதிலை தேர்வு செய்யவும்.',
+       tg:'Correct answer select பண்ணிட்டு continue பண்ணுங்க.'},
+  opts:[{en:'Microsoft Excel', ta:'Microsoft Excel', tg:'Microsoft Excel'},
+        {en:'YouTube',          ta:'YouTube',          tg:'YouTube'},
+        {en:'Google Maps',      ta:'Google Maps',      tg:'Google Maps'},
+        {en:'WhatsApp',         ta:'WhatsApp',         tg:'WhatsApp'}]},
+
+/* ══ SECTION 4 ══ */
+{ id:14, type:'check',
+  sec:{en:'Where AI Can Help', ta:'AI உதவக்கூடிய இடங்கள்', tg:'AI எங்க உதவலாம்'},
+  sketch:'sketch-s4',
+  q:{en:'Which areas of your life would you most want AI help in?',
+     ta:'உங்கள் வாழ்க்கையின் எந்த பகுதிகளில் AI உதவி வேண்டும்?',
+     tg:'உங்கள் life-ல எங்க AI help வேணும்?'},
+  opts:[{en:'Study / homework',              ta:'படிப்பு / வீட்டுப்பாடம்',             tg:'படிப்பு / homework'},
+        {en:'Job search & resume',           ta:'வேலை தேடல் & விண்ணப்பம்',            tg:'Job search & resume'},
+        {en:'Starting a business',           ta:'தொழில் தொடங்குதல்',                   tg:'Business start பண்றது'},
+        {en:'Health information',            ta:'உடல்நல தகவல்',                        tg:'Health information'},
+        {en:'Daily planning',                ta:'அன்றாட திட்டமிடல்',                   tg:'Daily planning'},
+        {en:'Creative work (writing/design)',ta:'படைப்பு பணி (எழுத்து/வடிவமைப்பு)',   tg:'Creative work (writing/design)'},
+        {en:'Government schemes & forms',    ta:'அரசு திட்டங்கள் & படிவங்கள்',        tg:'Government schemes & forms'}]},
+
+{ id:15, type:'scale',
+  q:{en:'How important is it for AI tools to be available in Tamil?',
+     ta:'AI கருவிகள் தமிழில் கிடைப்பது எவ்வளவு முக்கியம்?',
+     tg:'AI tools Tamil-ல இருக்கணும்னு எவ்வளவு important?'},
+  low:{en:'Not important', ta:'முக்கியமில்லை', tg:'Important இல்லை'},
+  high:{en:'Very important', ta:'மிகவும் முக்கியம்', tg:'மிகவும் important'}},
+
+{ id:16, type:'scale',
+  q:{en:'Do you believe AI tools can genuinely help people like you build a better career?',
+     ta:'AI கருவிகள் உங்களைப் போன்ற மக்களுக்கு சிறந்த தொழில் உருவாக்க உண்மையிலேயே உதவும் என்று நம்புகிறீர்களா?',
+     tg:'AI tools உங்களை மாதிரி ஆட்களுக்கு better career build பண்ண உதவும்னு நம்பீங்களா?'},
+  low:{en:'Not at all', ta:'ஒருவேளை இல்லை', tg:'இல்லவே இல்லை'},
+  high:{en:'Absolutely', ta:'முற்றிலும் ஆம்', tg:'Absolutely'}},
+
+{ id:17, type:'radio',
+  q:{en:'How often would you use AI tools if they were in Tamil?',
+     ta:'AI கருவிகள் தமிழில் கிடைத்தால் நீங்கள் எவ்வளவு அடிக்கடி பயன்படுத்துவீர்கள்?',
+     tg:'AI tools Tamil-ல இருந்தா நீங்க எவ்வளவு often use பண்ணுவீங்க?'},
+  opts:[{en:'Every day',            ta:'ஒவ்வொரு நாளும்',   tg:'Everyday'},
+        {en:'A few times a week',   ta:'வாரத்தில் சில முறை', tg:'Week-ல சில தடவை'},
+        {en:'Once in a while',      ta:'அவ்வப்போது',         tg:'சில நேரம்'},
+        {en:'Rarely',               ta:'அரிதாக',              tg:'Rare-ஆ'},
+        {en:'Probably never',       ta:'ஒருவேளை ஒருபோதும் இல்லை', tg:'இல்லாம போகலாம்'}]},
+
+{ id:18, type:'check',
+  q:{en:'What specific tasks would you use AI for?',
+     ta:'குறிப்பிட்ட என்ன பணிகளுக்கு AI பயன்படுத்துவீர்கள்?',
+     tg:'குறிப்பா எந்த tasks-க்கு AI use பண்ணுவீங்க?'},
+  opts:[{en:'Writing emails or letters',     ta:'மின்னஞ்சல் அல்லது கடிதங்கள் எழுதுதல்', tg:'Emails or letters எழுதுறது'},
+        {en:'Translating Tamil to English',  ta:'தமிழை ஆங்கிலத்தில் மொழிபெயர்த்தல்',    tg:'Tamil-ஐ English-க்கு translate பண்றது'},
+        {en:'Getting answers to questions',  ta:'கேள்விகளுக்கு பதில் பெறுதல்',            tg:'Questions-க்கு answers கேக்கறது'},
+        {en:'Creating images or videos',     ta:'படங்கள் அல்லது வீடியோக்கள் உருவாக்குதல்',tg:'Images or videos create பண்றது'},
+        {en:'Summarising long documents',    ta:'நீண்ட ஆவணங்களை சுருக்குதல்',             tg:'Long documents-ஐ summarise பண்றது'},
+        {en:'None of the above',             ta:'மேலே எதுவும் இல்லை',                      tg:'எதுவும் இல்லை'}]},
+
+/* ══ SECTION 5 ══ */
+{ id:19, type:'check',
+  sec:{en:"What's Stopping You?", ta:'உங்களை என்ன தடுக்கிறது?', tg:'உங்களை எது தடுக்குது?'},
+  sketch:'sketch-s5',
+  q:{en:'What are the biggest barriers stopping you from using AI tools?',
+     ta:'AI கருவிகளை பயன்படுத்துவதை தடுக்கும் மிகப்பெரிய தடைகள் என்ன?',
+     tg:'AI tools use பண்றதை தடுக்கற biggest barriers என்ன?'},
+  opts:[{en:"Everything is in English — can't understand", ta:'எல்லாமே ஆங்கிலத்தில் — புரியவில்லை',           tg:'எல்லாமே English-ல இருக்கு — புரியலை'},
+        {en:"Don't know where to start",                  ta:'எங்கிருந்து தொடங்குவது தெரியவில்லை',           tg:'எங்க start பண்றதுன்னு தெரியலை'},
+        {en:"Scared I'll do something wrong",             ta:'தவறு செய்துவிடுவேன் என்று பயம்',               tg:'தப்பு பண்ணிடுவேன்னு பயம்'},
+        {en:'My internet is too slow',                    ta:'என் இணையம் மிகவும் மெதுவாக உள்ளது',           tg:'என் internet romba slow'},
+        {en:"Don't have a computer or good phone",        ta:'கணினி அல்லது நல்ல தொலைபேசி இல்லை',            tg:'Computer or நல்ல phone இல்லை'},
+        {en:"Don't trust AI — feels unsafe",              ta:'AI-ஐ நம்பவில்லை — பாதுகாப்பற்றதாக தோன்றுகிறது',tg:'AI-ஐ நம்பலை — unsafe-ஆ feel ஆகுது'},
+        {en:'No one around me uses it',                   ta:'என் சுற்றத்தில் யாரும் பயன்படுத்தவில்லை',     tg:'என் கிட்ட யாரும் use பண்றதில்லை'}]},
+
+{ id:20, type:'scale',
+  q:{en:'How much does the language barrier (English only) stop you from using AI?',
+     ta:'மொழித் தடை (ஆங்கிலம் மட்டும்) AI பயன்படுத்துவதை எவ்வளவு தடுக்கிறது?',
+     tg:'Language barrier (எல்லாமே English) உங்களை AI use பண்ண எவ்வளவு தடுக்குது?'},
+  low:{en:"Doesn't stop me", ta:'தடுக்கவில்லை', tg:'தடுக்கலை'},
+  high:{en:'Completely stops me', ta:'முற்றிலும் தடுக்கிறது', tg:'Completely தடுக்குது'}},
+
+{ id:21, type:'scale', trap:'reverse',
+  q:{en:'AI tools are completely useless for someone like me.',
+     ta:'என்னைப் போன்ற ஒருவருக்கு AI கருவிகள் முற்றிலும் பயனற்றவை.',
+     tg:'என்னை மாதிரி ஒருத்தருக்கு AI tools completely useless.'},
+  sub:{en:'Rate your agreement with this statement.',
+       ta:'இந்த கூற்றுடன் உங்கள் ஒப்புதலை மதிப்பிடுங்கள்.',
+       tg:'இந்த statement-க்கு எவ்வளவு agree பண்றீங்க?'},
+  low:{en:'Strongly disagree', ta:'கடுமையாக எதிர்க்கிறேன்', tg:'Strongly disagree'},
+  high:{en:'Strongly agree', ta:'கடுமையாக ஒப்புக்கொள்கிறேன்', tg:'Strongly agree'}},
+
+{ id:22, type:'scale',
+  q:{en:'Do you feel embarrassed when asking basic questions to an AI?',
+     ta:'AI-ஐ அடிப்படை கேள்விகள் கேட்கும்போது நீங்கள் தயக்கமாக உணர்கிறீர்களா?',
+     tg:'AI-கிட்ட basic questions கேக்கும்போது embarrassed-ஆ feel ஆகுதா?'},
+  low:{en:'Not at all', ta:'இல்லை', tg:'இல்லவே இல்லை'},
+  high:{en:'Very much', ta:'மிகவும்', tg:'மிகவும்'}},
+
+{ id:23, type:'scale',
+  q:{en:'If a free Tamil-language AI tutorial video existed, how likely would you watch it?',
+     ta:'இலவச தமிழ் AI பயிற்சி வீடியோ இருந்தால், நீங்கள் அதை பார்க்க எவ்வளவு வாய்ப்பு?',
+     tg:'Free-யா Tamil-ல AI tutorial video இருந்தா, நீங்க watch பண்ண எவ்வளவு chance?'},
+  low:{en:'Very unlikely', ta:'மிகவும் சாத்தியமில்லை', tg:'மிகவும் unlikely'},
+  high:{en:'Definitely yes', ta:'நிச்சயமாக ஆம்', tg:'Definitely yes'}},
+
+{ id:24, type:'check',
+  q:{en:'What would make you trust and use an AI tool?',
+     ta:'என்ன இருந்தால் நீங்கள் AI கருவியை நம்பி பயன்படுத்துவீர்கள்?',
+     tg:'என்ன இருந்தா AI tool-ஐ நம்பி use பண்ணுவீங்க?'},
+  opts:[{en:'If it works in Tamil',                 ta:'தமிழில் செயல்பட்டால்',               tg:'Tamil-ல work பண்ணா'},
+        {en:'If a trusted person recommends it',    ta:'நம்பகமான ஒருவர் பரிந்துரைத்தால்',    tg:'Trusted person recommend பண்ணா'},
+        {en:'If my school or college teaches it',   ta:'பள்ளி அல்லது கல்லூரி கற்பித்தால்',   tg:'School or college கத்துக்கொடுத்தா'},
+        {en:"If it's free",                         ta:'இலவசமாக இருந்தால்',                  tg:"Free-யா இருந்தா"},
+        {en:'If I see others using it successfully',ta:'மற்றவர்கள் வெற்றிகரமாக பயன்படுத்துவதை பார்த்தால்',tg:'மத்தவங்க successfully use பண்றதை பார்த்தா'}]},
+
+/* ══ SECTION 6 ══ */
+{ id:25, type:'scale',
+  sec:{en:'Your AI Experience', ta:'உங்கள் AI அனுபவம்', tg:'உங்கள் AI experience'},
+  sketch:'sketch-s6',
+  q:{en:'How comfortable are you using AI tools right now?',
+     ta:'இப்போது AI கருவிகளை பயன்படுத்துவதில் எவ்வளவு வசதியாக இருக்கிறீர்கள்?',
+     tg:'இப்போ AI tools use பண்றது எவ்வளவு comfortable?'},
+  low:{en:'Total beginner', ta:'முழு தொடக்கக்காரர்', tg:'Total beginner'},
+  high:{en:'Very confident', ta:'மிகவும் நம்பிக்கையாக', tg:'மிகவும் confident'}},
+
+{ id:26, type:'radio',
+  q:{en:'Have you ever tried learning something online (YouTube, apps, websites)?',
+     ta:'நீங்கள் ஒருபோதாவது ஆன்லைனில் ஏதாவது கற்றுக்கொள்ள முயற்சித்தீர்களா?',
+     tg:'Online-ல ஏதாவது learn பண்ண try பண்ணீங்களா?'},
+  opts:[{en:'Yes, I do it regularly',        ta:'ஆம், தொடர்ந்து செய்கிறேன்',             tg:'ஆமா, regularly பண்றேன்'},
+        {en:'Yes, tried a few times',        ta:'ஆம், சில முறை முயற்சித்தேன்',           tg:'ஆமா, சில தடவை try பண்ணேன்'},
+        {en:"Started but couldn't continue", ta:'தொடங்கினேன், ஆனால் தொடர முடியவில்லை',  tg:'Start பண்ணேன், ஆனா தொடர முடியலை'},
+        {en:'No, never tried',               ta:'இல்லை, ஒருபோதும் முயற்சிக்கவில்லை',   tg:'இல்லை, try பண்ணலை'}]},
+
+{ id:27, type:'check',
+  q:{en:'If you started and stopped online learning, why did you stop?',
+     ta:'நீங்கள் ஆன்லைன் கற்றலை தொடங்கி நிறுத்தியிருந்தால், ஏன் நிறுத்தினீர்கள்?',
+     tg:'Online learning start பண்ணி stop பண்ணீங்களா? ஏன்?'},
+  opts:[{en:'Content was in English only',  ta:'உள்ளடக்கம் ஆங்கிலத்தில் மட்டும்',        tg:'Content English-ல மட்டும் இருந்துச்சு'},
+        {en:'Too complicated / technical',  ta:'மிகவும் சிக்கலாக / தொழில்நுட்பமாக',       tg:'Romba complicated / technical-ஆ இருந்துச்சு'},
+        {en:'Got bored',                    ta:'சலிப்பாக போனது',                          tg:'Boring-ஆ போச்சு'},
+        {en:'No time',                      ta:'நேரமில்லை',                               tg:'Time இல்லை'},
+        {en:'Internet issues',              ta:'இணைய பிரச்சனைகள்',                        tg:'Internet problem'},
+        {en:"Doesn't apply — I never stopped",ta:'இது பொருந்தாது — நிறுத்தவில்லை',      tg:'இது apply ஆகலை — நான் stop பண்ணலை'}]},
+
+{ id:28, type:'check',
+  q:{en:'Which topics should Tamil AI tutorial videos cover first? (Pick up to 3)',
+     ta:'தமிழ் AI பயிற்சி வீடியோக்கள் முதலில் எந்த தலைப்புகளை உள்ளடக்க வேண்டும்? (3 வரை தேர்வு செய்யவும்)',
+     tg:'Tamil AI tutorial videos முதல்ல எந்த topics cover பண்ணணும்? (3 வரை select பண்ணுங்க)'},
+  maxSelect:3,
+  opts:[{en:'What is AI and how does it work?',   ta:'AI என்றால் என்ன, எவ்வாறு செயல்படுகிறது?', tg:'AI என்ன, எப்படி work பண்றது?'},
+        {en:'How to use ChatGPT in Tamil',         ta:'தமிழில் ChatGPT எப்படி பயன்படுத்துவது',    tg:'Tamil-ல ChatGPT எப்படி use பண்றது'},
+        {en:'AI for job search and resume',        ta:'வேலை பெற / resume எழுத AI',               tg:'Job கிடைக்க / resume எழுத AI'},
+        {en:'AI for students and studying',        ta:'மாணவர்களுக்கும் படிப்பதற்கும் AI',        tg:'Students-க்கும் படிப்புக்கும் AI'},
+        {en:'AI for small business owners',        ta:'சிறு தொழில் அதிபர்களுக்கு AI',            tg:'Small business owners-க்கு AI'},
+        {en:'How to stay safe online with AI',     ta:'AI-உடன் ஆன்லைனில் பாதுகாப்பாக இருப்பது',  tg:'AI-உடன் online-ல safe-ஆ இருக்கறது'}]},
+
+/* ══ SECTION 7 ══ */
+{ id:29, type:'check',
+  sec:{en:'How You Learn Best', ta:'நீங்கள் சிறப்பாக கற்கும் முறை', tg:'நீங்கள் எப்படி learn பண்றீங்க?'},
+  sketch:'sketch-s7',
+  q:{en:'What type of content would make you watch and learn about AI?',
+     ta:'எந்த வகையான உள்ளடக்கம் AI-ஐப் பற்றி பார்க்கவும் கற்கவும் வைக்கும்?',
+     tg:'எந்த மாதிரி content இருந்தா AI பத்தி watch பண்ணி learn பண்ணுவீங்க?'},
+  opts:[{en:'Short videos under 5 minutes',        ta:'5 நிமிடத்திற்கும் குறைவான குறுகிய வீடியோக்கள்', tg:'5 minutes-க்கும் கம்மியான short videos'},
+        {en:'Step-by-step tutorials in Tamil',      ta:'தமிழில் படிப்படியான பயிற்சிகள்',              tg:'தமிழில் step-by-step tutorials'},
+        {en:'Real stories from Tamil students',     ta:'தமிழ் மாணவர்களின் உண்மையான கதைகள்',           tg:'Tamil students-ஓட real stories'},
+        {en:'Live Q&A sessions I can join',         ta:'கலந்துகொள்ளக்கூடிய நேரடி Q&A அமர்வுகள்',    tg:'நான் join பண்ண முடியற live Q&A sessions'},
+        {en:'PDF or written guides in Tamil',       ta:'தமிழில் PDF அல்லது எழுத்து வழிகாட்டிகள்',    tg:'தமிழில் PDF or written guides'},
+        {en:'In-person workshops near me',          ta:'என் அருகில் நடைமுறை பட்டறைகள்',              tg:'என் கிட்ட in-person workshops'}]},
+
+{ id:30, type:'check',
+  q:{en:'What makes you watch a video AND share it with others?',
+     ta:'ஒரு வீடியோவை பார்க்கவும் மற்றவர்களிடம் பகிரவும் என்ன வைக்கிறது?',
+     tg:'ஒரு video பார்க்கவும் மத்தவங்ககிட்ட share பண்ணவும் என்ன வைக்குது?'},
+  opts:[{en:"It's in Tamil and easy to understand", ta:'தமிழில் உள்ளது மற்றும் புரிந்துகொள்ள எளிதாக', tg:'Tamil-ல இருக்கு, easily புரியுது'},
+        {en:'It solves a real problem I have',     ta:'என்னிடம் உள்ள ஒரு உண்மையான சிக்கலை தீர்க்கிறது', tg:'என்னோட real problem-ஐ solve பண்றது'},
+        {en:"It's funny or entertaining",          ta:'நகைச்சுவையாக அல்லது பொழுதுபோக்காக உள்ளது',    tg:'Funny or entertaining-ஆ இருக்கு'},
+        {en:"It's short and doesn't waste my time",ta:'குறுகியதாக உள்ளது, நேரத்தை வீணடிக்கவில்லை',  tg:'Short-ஆ இருக்கு, time waste பண்றதில்லை'},
+        {en:'A person I trust recommends it',      ta:'நான் நம்பும் ஒருவர் பரிந்துரைக்கிறார்',         tg:'நான் நம்புற ஒருத்தர் recommend பண்றாங்க'},
+        {en:'It shows real results / success',     ta:'உண்மையான முடிவுகள் / வெற்றிக் கதைகளை காட்டுகிறது',tg:'Real results / success காட்டுது'}]},
+
+/* ══ SECTION 8 ══ */
+{ id:31, type:'text', optional:true,
+  sec:{en:'Your Voice', ta:'உங்கள் குரல்', tg:'உங்கள் பேச்சு'},
+  sketch:'sketch-s8',
+  q:{en:"In your own words — what would make AI truly useful for someone in your situation?",
+     ta:'உங்கள் சொந்த வார்த்தைகளில் — உங்கள் நிலைமையில் உள்ள ஒருவருக்கு AI உண்மையிலேயே பயனுள்ளதாக மாற என்ன செய்ய வேண்டும்?',
+     tg:'உங்கள் சொந்த வார்த்தைகளில் — உங்கள் situation-ல இருக்கவங்களுக்கு AI really useful ஆகணும்னா என்ன செய்யணும்?'},
+  sub:{en:'Answer in Tamil, Tanglish, or English — whichever feels natural.',
+       ta:'தமிழ், தங்கிலீஷ் அல்லது ஆங்கிலத்தில் பதிலளிக்கவும் — எதுவும் சரி.',
+       tg:'Tamil, Tanglish or English — எதுவும் சரி.'}},
+
+{ id:32, type:'text', optional:true,
+  q:{en:'Is there anything else you\'d like to tell us about AI and your community?',
+     ta:'AI மற்றும் உங்கள் சமூகம் பற்றி வேறு ஏதாவது சொல்ல விரும்புகிறீர்களா?',
+     tg:'AI பத்தியும் உங்கள் community பத்தியும் வேற ஏதாவது சொல்லணும்னு இருக்கா?'},
+  sub:{en:'Completely optional.', ta:'விரும்பினால் மட்டும்.', tg:'Optional.'}},
+
+/* ── THANK YOU ── */
+{ id:'done', type:'done' },
+];
+
+/* ══════════════════════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════════════════════ */
+let lang       = 'en';
+let cur        = 0;
+let answers    = {};
+let startTime  = Date.now();
+let flags      = [];
+
+/* ══════════════════════════════════════════════════════════════
+   RENDER ENGINE
+══════════════════════════════════════════════════════════════ */
+const stage = document.getElementById('stage');
+
+function sketchImg(cls, size) {
+  const src = `sketches/${cls.replace('sketch-', '')}.png`;
+  return `<div class="sketch-zone ${cls} placeholder" id="${cls}">
+    <img src="${src}" alt="illustration"
+      onload="this.parentElement.classList.remove('placeholder')"
+      onerror="this.style.display='none'">
+  </div>`;
+}
+
+function renderSlide(s, idx) {
+  const isTa = lang === 'ta' || lang === 'tg';
+  const tclass = isTa ? ' ta' : '';
+  const tf = isTa ? ' style="font-family:\'Noto Sans Tamil\',\'Latha\',sans-serif"' : '';
+
+  if (s.type === 'welcome') {
+    return `
+    <div class="slide" id="slide-${idx}">
+      ${sketchImg('sketch-cover sketch-zone', '1200x360')}
+      <div class="cover-title">
+        ${lang==='en' ? 'Tamil Nadu AI Literacy Survey'
+          : lang==='ta' ? '<span style="font-family:\'Noto Sans Tamil\',sans-serif">தமிழ்நாடு AI கல்வியறிவு ஆய்வு</span>'
+          : '<span style="font-family:\'Noto Sans Tamil\',sans-serif">Tamil Nadu AI Literacy Survey</span>'}
+      </div>
+      <div class="cover-sub${tclass}"${tf}>
+        ${lang==='en'
+          ? 'Help us understand how AI can be made more accessible in Tamil. Takes about 12–15 minutes. All answers are anonymous.'
+          : lang==='ta'
+          ? 'AI-ஐ தமிழில் அணுகக்கூடியதாக மாற்ற உதவுங்கள். சுமார் 12–15 நிமிடங்கள். அனைத்து பதில்களும் அநாமதேயமானவை.'
+          : 'AI-ஐ Tamil-ல accessible ஆக்க உதவுங்கள். சுமார் 12–15 minutes. எல்லா answers-உம் anonymous.'}
+      </div>
+      <button class="start-btn" onclick="next()">
+        ${lang==='en' ? 'Start survey →'
+          : lang==='ta' ? '<span style="font-family:\'Noto Sans Tamil\',sans-serif">தொடங்குங்கள் →</span>'
+          : '<span style="font-family:\'Noto Sans Tamil\',sans-serif">Start பண்ணுங்க →</span>'}
+      </button>
+    </div>`;
+  }
+
+  if (s.type === 'done') {
+    return `
+    <div class="slide" id="slide-${idx}" style="text-align:center">
+      <div class="done-icon">🙏</div>
+      <div class="cover-title">
+        ${lang==='en' ? 'Thank you!'
+          : lang==='ta' ? '<span style="font-family:\'Noto Sans Tamil\',sans-serif">நன்றி!</span>'
+          : '<span style="font-family:\'Noto Sans Tamil\',sans-serif">நன்றி! Super!</span>'}
+      </div>
+      <div class="cover-sub${tclass}"${tf}>
+        ${lang==='en'
+          ? 'Your response has been recorded. This will help make AI more accessible in Tamil Nadu.'
+          : lang==='ta'
+          ? 'உங்கள் பதில் பதிவு செய்யப்பட்டது. இது தமிழ்நாட்டில் AI-ஐ அணுகக்கூடியதாக மாற்ற உதவும்.'
+          : 'உங்கள் response save ஆச்சு. Tamil Nadu-ல AI accessible ஆக்க இது உதவும்.'}
+      </div>
+    </div>`;
+  }
+
+  // normal question
+  const qText = s.q[lang];
+  const subText = s.sub ? s.sub[lang] : null;
+  const ans = answers[s.id];
+
+  let html = `<div class="slide" id="slide-${idx}">`;
+
+  // sketch at start of section
+  if (s.sketch) {
+    html += sketchImg(s.sketch, '800x200');
+  }
+
+  // section label
+  if (s.sec) {
+    html += `<div class="sec-label${tclass}"${tf}>${s.sec[lang]}</div>`;
+  }
+
+  // trap badge
+  if (s.trap === 'attention') {
+    html += `<div class="trap-badge">⚡ Attention check</div>`;
+  } else if (s.trap === 'reverse') {
+    html += `<div class="trap-badge">↩ Reverse-worded question</div>`;
+  }
+
+  // question
+  html += `<div class="q-text${tclass}"${tf}>${qText}</div>`;
+  if (subText) html += `<div class="q-sub${tclass}"${tf}>${subText}</div>`;
+
+  // answer area
+  if (s.type === 'radio') {
+    html += `<div class="opts">`;
+    s.opts.forEach((o, i) => {
+      const sel = ans === i ? 'selected' : '';
+      const otClass = (lang==='ta'||lang==='tg') ? ' ta' : '';
+      html += `<button class="opt${otClass} ${sel}" onclick="pick(${i})" ${tf}>
+        <span class="opt-circle"></span>
+        <span class="opt-label">${o[lang]}</span>
+      </button>`;
+    });
+    html += `</div>`;
+  }
+
+  if (s.type === 'check') {
+    html += `<div class="opts">`;
+    const arr = ans || [];
+    s.opts.forEach((o, i) => {
+      const sel = arr.includes(i) ? 'selected' : '';
+      const otClass = (lang==='ta'||lang==='tg') ? ' ta' : '';
+      html += `<button class="opt${otClass} ${sel}" onclick="tog(${i})" ${tf}>
+        <span class="opt-sq"></span>
+        <span class="opt-label">${o[lang]}</span>
+      </button>`;
+    });
+    html += `</div>`;
+    if (s.maxSelect) {
+      html += `<div style="font-size:12px;color:#aaa;margin-top:8px">
+        ${lang==='ta' ? `<span${tf}>அதிகபட்சம் ${s.maxSelect} தேர்வுகள்</span>` : `Select up to ${s.maxSelect}`}
+      </div>`;
+    }
+  }
+
+  if (s.type === 'scale') {
+    const v = ans || 0;
+    html += `<div class="scale-wrap">
+      <div class="scale-row">`;
+    for (let i = 1; i <= 5; i++) {
+      html += `<button class="scale-btn ${v===i?'selected':''}" onclick="pick(${i})">${i}</button>`;
+    }
+    html += `</div>
+      <div class="scale-labels${isTa?' ta':''}"${tf}>
+        <span>${s.low[lang]}</span><span>${s.high[lang]}</span>
+      </div></div>`;
+  }
+
+  if (s.type === 'text') {
+    const val = typeof ans === 'string' ? ans : '';
+    const ph = lang==='en' ? '(Optional — answer in any language)'
+      : lang==='ta' ? '(விரும்பினால் — எந்த மொழியிலும் சரி)'
+      : '(Optional — எந்த மொழியிலும் சரி)';
+    html += `<textarea class="q-textarea" id="ta-${s.id}" placeholder="${ph}" oninput="saveText()">${val}</textarea>`;
+  }
+
+  html += `</div>`;
+  return html;
+}
+
+function buildAll() {
+  stage.innerHTML = SLIDES.map((s, i) => renderSlide(s, i)).join('');
+}
+
+function showSlide(idx, dir) {
+  const slides = stage.querySelectorAll('.slide');
+  const prev = stage.querySelector('.slide.active');
+
+  if (prev) {
+    prev.classList.remove('active');
+    prev.classList.add(dir > 0 ? 'exit-up' : 'exit-down');
+    setTimeout(() => prev.classList.remove('exit-up', 'exit-down'), 300);
+  }
+
+  const next = slides[idx];
+  if (next) {
+    next.style.transform = dir > 0 ? 'translateY(28px)' : 'translateY(-28px)';
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        next.style.transform = '';
+        next.classList.add('active');
+      });
+    });
+  }
+
+  updateUI(idx);
+}
+
+function updateUI(idx) {
+  const s = SLIDES[idx];
+  const isSpecial = s.type === 'welcome' || s.type === 'done';
+  const total = SLIDES.filter(x => x.type !== 'welcome' && x.type !== 'done').length;
+  const qNum  = SLIDES.slice(1, idx).filter(x => x.type !== 'done').length;
+
+  // progress
+  const pct = isSpecial ? (s.type==='done' ? 100 : 0) : Math.round((qNum / total) * 100);
+  document.getElementById('progress-bar').style.width = pct + '%';
+
+  // counter
+  const ctr = document.getElementById('q-counter');
+  if (isSpecial) { ctr.textContent = ''; }
+  else { ctr.textContent = `${qNum} / ${total}`; }
+
+  // bottom bar
+  const bb = document.getElementById('bottombar');
+  const hint = document.getElementById('enter-hint');
+  bb.style.display = isSpecial ? 'none' : 'flex';
+  hint.style.display = isSpecial ? 'none' : 'block';
+
+  document.getElementById('err-msg').textContent = '';
+
+  // back button
+  document.getElementById('btn-back').style.visibility = idx <= 1 ? 'hidden' : 'visible';
+
+  // next button text
+  const btn = document.getElementById('btn-next');
+  const isLast = SLIDES[idx+1]?.type === 'done';
+  if (lang === 'ta') btn.textContent = isLast ? 'சமர்ப்பிக்க →' : 'அடுத்து →';
+  else if (lang === 'tg') btn.textContent = isLast ? 'Submit பண்ணு →' : 'அடுத்து →';
+  else btn.textContent = isLast ? 'Submit →' : 'Next →';
+}
+
+/* ══════════════════════════════════════════════════════════════
+   INTERACTIONS
+══════════════════════════════════════════════════════════════ */
+window.pick = function(v) {
+  answers[SLIDES[cur].id] = v;
+  // re-render just the current slide options
+  const s = SLIDES[cur];
+  if (s.type === 'radio') {
+    stage.querySelectorAll('.opt').forEach((el, i) => {
+      el.classList.toggle('selected', i === v);
+    });
+  } else if (s.type === 'scale') {
+    stage.querySelectorAll('.scale-btn').forEach((el, i) => {
+      el.classList.toggle('selected', (i + 1) === v);
+    });
+  }
+  document.getElementById('err-msg').textContent = '';
+};
+
+window.tog = function(i) {
+  const s = SLIDES[cur];
+  let arr = answers[s.id] || [];
+  const idx = arr.indexOf(i);
+  if (idx >= 0) {
+    arr.splice(idx, 1);
+  } else {
+    if (s.maxSelect && arr.length >= s.maxSelect) return;
+    arr.push(i);
+  }
+  answers[s.id] = [...arr];
+  stage.querySelectorAll('.opt').forEach((el, j) => {
+    el.classList.toggle('selected', arr.includes(j));
+  });
+  document.getElementById('err-msg').textContent = '';
+};
+
+window.saveText = function() {
+  const s = SLIDES[cur];
+  const ta = document.getElementById(`ta-${s.id}`);
+  if (ta) answers[s.id] = ta.value;
+};
+
+window.next = function() {
+  const s = SLIDES[cur];
+
+  // save textarea
+  if (s.type === 'text') {
+    const ta = document.getElementById(`ta-${s.id}`);
+    if (ta) answers[s.id] = ta.value;
+  }
+
+  // validate
+  const ans = answers[s.id];
+  const empty = ans === undefined || ans === null
+    || (Array.isArray(ans) && ans.length === 0)
+    || (s.type === 'text' && !ans && !s.optional);
+
+  if (empty && !s.optional && s.type !== 'text' && s.type !== 'welcome') {
+    const msg = lang === 'ta' ? 'பதில் அளிக்கவும்.'
+              : lang === 'tg' ? 'Answer பண்ணிட்டு போங்க.'
+              : 'Please answer before continuing.';
+    document.getElementById('err-msg').textContent = msg;
+    return;
+  }
+
+  // trap flag
+  if (s.trap === 'attention' && ans !== s.correctIdx) {
+    if (!flags.includes('trap')) flags.push('trap');
+  }
+
+  // last question — submit
+  if (SLIDES[cur + 1]?.type === 'done') {
+    submitAnswers();
+    return;
+  }
+
+  cur++;
+  // re-render current slide (language may differ if user switched)
+  const el = document.getElementById(`slide-${cur}`);
+  if (el) el.outerHTML = renderSlide(SLIDES[cur], cur);
+  showSlide(cur, 1);
+};
+
+window.go = function(dir) {
+  if (dir < 0 && cur <= 1) return;
+  cur += dir;
+  cur = Math.max(1, Math.min(SLIDES.length - 2, cur));
+  const el = document.getElementById(`slide-${cur}`);
+  if (el) el.outerHTML = renderSlide(SLIDES[cur], cur);
+  showSlide(cur, dir);
+};
+
+/* ── language switch ── */
+window.setLang = function(l, btn) {
+  lang = l;
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  // re-render current slide
+  const el = stage.querySelector(`#slide-${cur}`);
+  if (el) {
+    const newHTML = renderSlide(SLIDES[cur], cur);
+    const tmp = document.createElement('div');
+    tmp.innerHTML = newHTML;
+    el.outerHTML = newHTML;
+    showSlide(cur, 0);
+    // restore opacity immediately (no transition on lang switch)
+    const newEl = document.getElementById(`slide-${cur}`);
+    if (newEl) {
+      newEl.style.transition = 'none';
+      newEl.classList.add('active');
+      setTimeout(() => newEl.style.transition = '', 50);
+    }
+  }
+  updateUI(cur);
+};
+
+/* ── keyboard ── */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    const ta = document.activeElement?.tagName === 'TEXTAREA';
+    if (!ta) { e.preventDefault(); next(); }
+  }
+  if (e.key === 'ArrowLeft' || e.key === 'Backspace') {
+    if (document.activeElement?.tagName !== 'INPUT' &&
+        document.activeElement?.tagName !== 'TEXTAREA') {
+      go(-1);
+    }
+  }
+});
+
+/* ══════════════════════════════════════════════════════════════
+   SUBMIT TO APPWRITE
+══════════════════════════════════════════════════════════════ */
+async function submitAnswers() {
+  // check flags
+  const secs = Math.round((Date.now() - startTime) / 1000);
+  if (secs < 180) flags.push('fast');
+  // contradiction: Q3 (never used AI) but Q25 comfort >= 3
+  const q3 = answers[3], q25 = answers[25];
+  if ((q3 === 2 || q3 === 3) && q25 >= 3) flags.push('contradiction');
+
+  const doc = {
+    q1_age:               optVal(1), q2_occupation:     optVal(2),
+    q3_used_ai:           optVal(3), q4_device:         optVal(6),
+    q5_language:          optVal(5), q6_location:       optVal(3),
+    q7_smartphone:        answers[7] || 0,
+    q8_apps:              arrVal(8),
+    q9_internet:          optVal(9),
+    q10_heard_from:       optVal(10),
+    q11_tools_tried:      arrVal(11),
+    q12_what_happened:    optVal(12),
+    q13_first_reaction:   optVal(13),
+    q7_trap_pass:         answers['ac'] === 1,
+    q14_ai_help:          arrVal(14),
+    q15_importance:       answers[15] || 0,
+    q16_career_belief:    answers[16] || 0,
+    q17_usage_freq:       optVal(17),
+    q18_ai_tasks:         arrVal(18),
+    q19_barriers:         arrVal(19),
+    q20_lang_barrier:     answers[20] || 0,
+    q21_reverse:          answers[21] || 0,
+    q22_embarrassed:      answers[22] || 0,
+    q23_tutorial_likely:  answers[23] || 0,
+    q24_trust_factors:    arrVal(24),
+    q25_ai_comfort:       answers[25] || 0,
+    q26_online_learning:  optVal(26),
+    q27_dropout_reason:   arrVal(27),
+    q28_topics:           arrVal(28),
+    q29_content_type:     arrVal(29),
+    q30_share_trigger:    arrVal(30),
+    q31_open_text:        answers[31] || '',
+    q32_open_english:     answers[32] || '',
+    lang,
+    duration_secs:        secs,
+    flags:                flags.join(','),
+    submitted_at:         new Date().toISOString(),
+  };
+
+  try {
+    const { Client, Databases, ID } = Appwrite;
+    const client = new Client()
+      .setEndpoint(AW_ENDPOINT)
+      .setProject(AW_PROJECT_ID);
+    const db = new Databases(client);
+    await db.createDocument(AW_DATABASE_ID, AW_COLLECTION, ID.unique(), doc);
+  } catch (err) {
+    console.error('Appwrite error:', err);
+    // still show thank you — don't block respondent
+  }
+
+  cur = SLIDES.length - 1;
+  showSlide(cur, 1);
+}
+
+function optVal(id) {
+  const s = SLIDES.find(x => x.id === id);
+  const ans = answers[id];
+  if (!s || ans === undefined) return '';
+  return s.opts && s.opts[ans] ? s.opts[ans].en : String(ans);
+}
+function arrVal(id) {
+  const s = SLIDES.find(x => x.id === id);
+  const ans = answers[id];
+  if (!s || !ans || !ans.length) return '';
+  return ans.map(i => s.opts[i]?.en || i).join(', ');
+}
+
+/* ══════════════════════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════════════════════ */
+buildAll();
+showSlide(0, 1);
+</script>
+</body>
+</html>
