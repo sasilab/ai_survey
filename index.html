@@ -20,12 +20,14 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
   --bg: #ffffff;
-  --surface: #f7f7f7;
-  --border: #e5e5e5;
+  --surface: #fdf5fa;
+  --border: #e8e0e8;
   --text: #0f0f0f;
   --muted: #737373;
-  --accent: #0f0f0f;
+  --accent: #e8186d;
+  --accent-light: #fce8f3;
   --accent-inv: #ffffff;
+  --blue-dot: #3b7bd4;
   --danger: #c0392b;
   --radius: 10px;
   --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
@@ -69,7 +71,7 @@ body {
   background: var(--accent); color: var(--accent-inv);
   border-color: var(--accent);
 }
-.lang-btn:hover:not(.active) { border-color: #aaa; color: var(--text); }
+.lang-btn:hover:not(.active) { border-color: var(--accent); color: var(--accent); }
 
 /* ── main stage ── */
 #stage {
@@ -107,8 +109,8 @@ body {
   border-radius: var(--radius);
 }
 .sketch-zone.placeholder {
-  border: 2px dashed var(--border);
-  background: var(--surface); min-height: 140px;
+  border: 2px dashed #f0c0d8;
+  background: #fdf0f7; min-height: 140px;
   flex-direction: column; gap: 8px;
 }
 .sketch-zone.placeholder::after {
@@ -159,10 +161,11 @@ body {
   width: 100%; font-family: var(--font);
 }
 .opt.ta { font-family: var(--tamil-font); font-size: 14px; }
-.opt:hover { border-color: #aaa; background: var(--surface); }
+.opt:hover { border-color: var(--accent); background: var(--accent-light); }
 .opt.selected {
-  border-color: var(--accent); background: var(--accent);
-  color: var(--accent-inv);
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #ffffff;
 }
 .opt-circle {
   width: 18px; height: 18px; border-radius: 50%;
@@ -175,12 +178,19 @@ body {
   border: 2px solid currentColor; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
 }
+.opt.selected .opt-circle {
+  border-color: rgba(255,255,255,0.85);
+}
 .opt.selected .opt-circle::after {
   content: ''; width: 7px; height: 7px;
-  border-radius: 50%; background: currentColor;
+  border-radius: 50%; background: #ffffff;
+}
+.opt.selected .opt-sq {
+  border-color: rgba(255,255,255,0.85);
+  background: rgba(255,255,255,0.2);
 }
 .opt.selected .opt-sq::after {
-  content: '✓'; font-size: 11px; line-height: 1;
+  content: '✓'; font-size: 11px; line-height: 1; color: #ffffff;
 }
 .opt-label { flex: 1; line-height: 1.45; }
 
@@ -193,7 +203,7 @@ body {
   font-size: 16px; font-weight: 500; cursor: pointer;
   transition: all .14s; color: var(--text); font-family: var(--font);
 }
-.scale-btn:hover { border-color: #aaa; background: var(--surface); }
+.scale-btn:hover { border-color: var(--accent); background: var(--accent-light); color: var(--accent); }
 .scale-btn.selected {
   background: var(--accent); color: var(--accent-inv);
   border-color: var(--accent);
@@ -214,6 +224,14 @@ body {
   transition: border-color .14s;
 }
 .q-textarea:focus { outline: none; border-color: var(--accent); }
+
+/* pink dot accent on section label */
+.sec-label::before {
+  content: ''; display: inline-block;
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--accent); margin-right: 6px;
+  vertical-align: middle; margin-top: -2px;
+}
 
 /* ── bottom bar ── */
 #bottombar {
@@ -336,7 +354,7 @@ const SLIDES = [
         {en:'25 – 35',   ta:'25 – 35',              tg:'25 – 35'},
         {en:'35+',       ta:'35+',                  tg:'35+'}]},
 
-{ id:2, type:'radio',
+{ id:2, type:'radio', hasOther:true,
   q:{en:'What best describes you right now?',
      ta:'இப்போது உங்களை எது சிறப்பாக விவரிக்கிறது?',
      tg:'இப்போது உங்களை எப்படி describe பண்ணலாம்?'},
@@ -345,15 +363,17 @@ const SLIDES = [
         {en:'Working professional', ta:'வேலை செய்பவர்',            tg:'Working professional'},
         {en:'Business owner',       ta:'தொழிலதிபர்',               tg:'Business owner'},
         {en:'Homemaker',            ta:'இல்லத்தரசி / இல்லத்தரசர்', tg:'Homemaker'},
-        {en:'Other',                ta:'மற்றவை',                    tg:'வேற ஏதாவது'}]},
+        ],
+  hasOther:true},
 
-{ id:3, type:'radio',
+{ id:3, type:'radio', hasOther:true,
   q:{en:'Where do you currently live?',
      ta:'நீங்கள் தற்போது எங்கே வசிக்கிறீர்கள்?',
      tg:'நீங்கள் இப்போ எங்க இருக்கீங்க?'},
   opts:[{en:'City (Chennai, Coimbatore, Madurai…)', ta:'நகரம் (சென்னை, கோயம்புத்தூர், மதுரை…)',  tg:'City (Chennai, Coimbatore, Madurai…)'},
         {en:'Town / semi-urban',                    ta:'சிறு நகரம் / அரை நகர்ப்புறம்',             tg:'Town / semi-urban'},
-        {en:'Village / rural',                      ta:'கிராமம் / கிராமப்புறம்',                     tg:'கிராமம் / rural area'}]},
+        {en:'Village / rural',                      ta:'கிராமம் / கிராமப்புறம்',                     tg:'கிராமம் / rural area'}],
+  hasOther:true},
 
 { id:4, type:'radio',
   q:{en:'What is your highest level of education?',
@@ -375,7 +395,7 @@ const SLIDES = [
         {en:'Tanglish (mixed)',         ta:'தங்கிலீஷ் (கலந்து)',               tg:'Tanglish (mix பண்ணி)'}]},
 
 /* ══ SECTION 2 ══ */
-{ id:6, type:'radio',
+{ id:6, type:'radio', hasOther:true,
   sec:{en:'Tech Comfort', ta:'தொழில்நுட்ப வசதி', tg:'Tech Comfort'},
   sketch:'sketch-s2',
   q:{en:'What device do you use most often to go online?',
@@ -393,7 +413,7 @@ const SLIDES = [
   low:{en:'Not at all', ta:'வசதியில்லை',     tg:'Comfortable இல்லை'},
   high:{en:'Very comfortable', ta:'மிகவும் வசதியாக', tg:'மிகவும் comfortable'}},
 
-{ id:8, type:'check',
+{ id:8, type:'check', hasOther:true,
   q:{en:'Which apps do you use regularly?',
      ta:'நீங்கள் தொடர்ந்து பயன்படுத்தும் ஆப்ஸ் எவை?',
      tg:'நீங்கள் regularly use பண்ற apps எவை?'},
@@ -424,9 +444,10 @@ const SLIDES = [
         {en:'Friends or family',      ta:'நண்பர்கள் அல்லது குடும்பம்',      tg:'நண்பர்கள் or family'},
         {en:'School / college',       ta:'பள்ளி / கல்லூரி',                  tg:'School / college'},
         {en:'News or articles',       ta:'செய்தி அல்லது கட்டுரைகள்',         tg:'News or articles'},
-        {en:"Haven't heard of it",    ta:'கேட்டதில்லை',                      tg:'நான் கேட்டதே இல்லை'}]},
+        {en:"Haven't heard of it",    ta:'கேட்டதில்லை',                      tg:'நான் கேட்டதே இல்லை'}],
+  hasOther:true},
 
-{ id:11, type:'check',
+{ id:11, type:'check', hasOther:true,
   q:{en:'Which AI tools have you tried?',
      ta:'நீங்கள் எந்த AI கருவிகளை முயற்சித்தீர்கள்?',
      tg:'நீங்கள் எந்த AI tools try பண்ணீங்க?'},
@@ -437,7 +458,7 @@ const SLIDES = [
         {en:'AI image tools (Midjourney…)',  ta:'AI படம் கருவிகள்',                   tg:'AI image tools'},
         {en:'None — never tried any',        ta:'எதுவும் இல்லை — முயற்சிக்கவில்லை',  tg:'எதுவும் இல்லை — try பண்ணலை'}]},
 
-{ id:12, type:'radio',
+{ id:12, type:'radio', hasOther:true,
   q:{en:'When you tried an AI tool, what happened?',
      ta:'நீங்கள் ஒரு AI கருவியை முயற்சித்தபோது என்ன நடந்தது?',
      tg:'AI tool try பண்ணபோ என்ன ஆச்சு?'},
@@ -447,7 +468,7 @@ const SLIDES = [
         {en:'Everything was English — gave up',   ta:'எல்லாமே ஆங்கிலத்தில் — விட்டுவிட்டேன்',      tg:'எல்லாமே English-ல இருந்துச்சு — விட்டுட்டேன்'},
         {en:"Haven't tried any AI tool",          ta:'எந்த AI கருவியும் முயற்சிக்கவில்லை',         tg:'எந்த AI tool-உம் try பண்ணலை'}]},
 
-{ id:13, type:'radio',
+{ id:13, type:'radio', hasOther:true,
   q:{en:'What was your first reaction when you heard about AI?',
      ta:'AI பற்றி கேட்டபோது உங்கள் முதல் எதிர்வினை என்ன?',
      tg:'AI பத்தி கேட்டவுடனே உங்களுக்கு என்ன feel ஆச்சு?'},
@@ -455,7 +476,8 @@ const SLIDES = [
         {en:'Curious but unsure how to start',    ta:'ஆர்வமாக இருந்தது, எங்கிருந்து தொடங்குவது தெரியவில்லை', tg:'Curious-ஆ இருந்துச்சு, ஆனா எங்க start பண்றதுன்னு தெரியலை'},
         {en:'Scared — worried about job loss',    ta:'பயமாக இருந்தது — வேலைகளை பறிக்கும் என்று கவலைப்பட்டேன்', tg:'பயமா இருந்துச்சு — jobs போய்டும்னு worry ஆச்சு'},
         {en:"Confused — didn't understand",       ta:'குழப்பமாக இருந்தது — என்னவென்று புரியவில்லை',  tg:'Confused ஆச்சு — என்ன இதுன்னு புரியலை'},
-        {en:"Didn't care much",                   ta:'அதிகம் அக்கறை இல்லை',                          tg:'Periya concern இல்லை'}]},
+        {en:"Didn't care much",                   ta:'அதிகம் அக்கறை இல்லை',                          tg:'Periya concern இல்லை'}],
+  hasOther:true},
 
 /* ── ATTENTION CHECK (between Q13 and Q14) ── */
 { id:'ac', type:'radio', trap:'attention', correctIdx:1,
@@ -507,7 +529,8 @@ const SLIDES = [
         {en:'A few times a week',   ta:'வாரத்தில் சில முறை', tg:'Week-ல சில தடவை'},
         {en:'Once in a while',      ta:'அவ்வப்போது',         tg:'சில நேரம்'},
         {en:'Rarely',               ta:'அரிதாக',              tg:'Rare-ஆ'},
-        {en:'Probably never',       ta:'ஒருவேளை ஒருபோதும் இல்லை', tg:'இல்லாம போகலாம்'}]},
+        {en:'Probably never',       ta:'ஒருவேளை ஒருபோதும் இல்லை', tg:'இல்லாம போகலாம்'}],
+  hasOther:true},
 
 { id:18, type:'check',
   q:{en:'What specific tasks would you use AI for?',
@@ -574,7 +597,8 @@ const SLIDES = [
         {en:'If a trusted person recommends it',    ta:'நம்பகமான ஒருவர் பரிந்துரைத்தால்',    tg:'Trusted person recommend பண்ணா'},
         {en:'If my school or college teaches it',   ta:'பள்ளி அல்லது கல்லூரி கற்பித்தால்',   tg:'School or college கத்துக்கொடுத்தா'},
         {en:"If it's free",                         ta:'இலவசமாக இருந்தால்',                  tg:"Free-யா இருந்தா"},
-        {en:'If I see others using it successfully',ta:'மற்றவர்கள் வெற்றிகரமாக பயன்படுத்துவதை பார்த்தால்',tg:'மத்தவங்க successfully use பண்றதை பார்த்தா'}]},
+        {en:'If I see others using it successfully',ta:'மற்றவர்கள் வெற்றிகரமாக பயன்படுத்துவதை பார்த்தால்',tg:'மத்தவங்க successfully use பண்றதை பார்த்தா'}],
+  hasOther:true},
 
 /* ══ SECTION 6 ══ */
 { id:25, type:'scale',
@@ -586,14 +610,15 @@ const SLIDES = [
   low:{en:'Total beginner', ta:'முழு தொடக்கக்காரர்', tg:'Total beginner'},
   high:{en:'Very confident', ta:'மிகவும் நம்பிக்கையாக', tg:'மிகவும் confident'}},
 
-{ id:26, type:'radio',
+{ id:26, type:'radio', hasOther:true,
   q:{en:'Have you ever tried learning something online (YouTube, apps, websites)?',
      ta:'நீங்கள் ஒருபோதாவது ஆன்லைனில் ஏதாவது கற்றுக்கொள்ள முயற்சித்தீர்களா?',
      tg:'Online-ல ஏதாவது learn பண்ண try பண்ணீங்களா?'},
   opts:[{en:'Yes, I do it regularly',        ta:'ஆம், தொடர்ந்து செய்கிறேன்',             tg:'ஆமா, regularly பண்றேன்'},
         {en:'Yes, tried a few times',        ta:'ஆம், சில முறை முயற்சித்தேன்',           tg:'ஆமா, சில தடவை try பண்ணேன்'},
         {en:"Started but couldn't continue", ta:'தொடங்கினேன், ஆனால் தொடர முடியவில்லை',  tg:'Start பண்ணேன், ஆனா தொடர முடியலை'},
-        {en:'No, never tried',               ta:'இல்லை, ஒருபோதும் முயற்சிக்கவில்லை',   tg:'இல்லை, try பண்ணலை'}]},
+        {en:'No, never tried',               ta:'இல்லை, ஒருபோதும் முயற்சிக்கவில்லை',   tg:'இல்லை, try பண்ணலை'}],
+  hasOther:true},
 
 { id:27, type:'check',
   q:{en:'If you started and stopped online learning, why did you stop?',
@@ -630,7 +655,8 @@ const SLIDES = [
         {en:'Real stories from Tamil students',     ta:'தமிழ் மாணவர்களின் உண்மையான கதைகள்',           tg:'Tamil students-ஓட real stories'},
         {en:'Live Q&A sessions I can join',         ta:'கலந்துகொள்ளக்கூடிய நேரடி Q&A அமர்வுகள்',    tg:'நான் join பண்ண முடியற live Q&A sessions'},
         {en:'PDF or written guides in Tamil',       ta:'தமிழில் PDF அல்லது எழுத்து வழிகாட்டிகள்',    tg:'தமிழில் PDF or written guides'},
-        {en:'In-person workshops near me',          ta:'என் அருகில் நடைமுறை பட்டறைகள்',              tg:'என் கிட்ட in-person workshops'}]},
+        {en:'In-person workshops near me',          ta:'என் அருகில் நடைமுறை பட்டறைகள்',              tg:'என் கிட்ட in-person workshops'}],
+  hasOther:true},
 
 { id:30, type:'check',
   q:{en:'What makes you watch a video AND share it with others?',
@@ -641,7 +667,8 @@ const SLIDES = [
         {en:"It's funny or entertaining",          ta:'நகைச்சுவையாக அல்லது பொழுதுபோக்காக உள்ளது',    tg:'Funny or entertaining-ஆ இருக்கு'},
         {en:"It's short and doesn't waste my time",ta:'குறுகியதாக உள்ளது, நேரத்தை வீணடிக்கவில்லை',  tg:'Short-ஆ இருக்கு, time waste பண்றதில்லை'},
         {en:'A person I trust recommends it',      ta:'நான் நம்பும் ஒருவர் பரிந்துரைக்கிறார்',         tg:'நான் நம்புற ஒருத்தர் recommend பண்றாங்க'},
-        {en:'It shows real results / success',     ta:'உண்மையான முடிவுகள் / வெற்றிக் கதைகளை காட்டுகிறது',tg:'Real results / success காட்டுது'}]},
+        {en:'It shows real results / success',     ta:'உண்மையான முடிவுகள் / வெற்றிக் கதைகளை காட்டுகிறது',tg:'Real results / success காட்டுது'}],
+  hasOther:true},
 
 /* ══ SECTION 8 ══ */
 { id:31, type:'text', optional:true,
@@ -693,26 +720,191 @@ function renderSlide(s, idx) {
   const tf = isTa ? ' style="font-family:\'Noto Sans Tamil\',\'Latha\',sans-serif"' : '';
 
   if (s.type === 'welcome') {
+    const tf = (lang==='ta'||lang==='tg') ? ' style="font-family:\'Noto Sans Tamil\',sans-serif"' : '';
+    const btnText = lang==='en' ? 'Start survey \u2192'
+      : lang==='ta' ? `<span${tf}>\u0ba4\u0bca\u0b9f\u0b99\u0bcd\u0b95\u0bc1\u0b99\u0bcd\u0b95\u0bb3\u0bcd \u2192</span>`
+      : `<span${tf}>Start \u0baa\u0ba3\u0bcd\u0ba3\u0bc1\u0b99\u0bcd\u0b95 \u2192</span>`;
+    const purpose = {
+      en: `I am researching how people in Tamil Nadu understand and use AI tools \u2014 and what is stopping them. This survey takes about <strong>12\u201315 minutes</strong>. Your answers are completely anonymous and will only be used for this research.`,
+      ta: `<span${tf}>\u0ba4\u0bae\u0bbf\u0bb4\u0bcd\u0ba8\u0bbe\u0b9f\u0bcd\u0b9f\u0bbf\u0bb2\u0bcd \u0bae\u0b95\u0bcd\u0b95\u0bb3\u0bcd AI \u0b95\u0bb0\u0bc1\u0bb5\u0bbf\u0b95\u0bb3\u0bc8 \u0b8e\u0bb5\u0bcd\u0bb5\u0bbe\u0bb1\u0bc1 \u0baa\u0bc1\u0bb0\u0bbf\u0ba8\u0bcd\u0ba4\u0bc1\u0b95\u0bca\u0bb3\u0bcd\u0b95\u0bbf\u0bb1\u0bbe\u0bb0\u0bcd\u0b95\u0bb3\u0bcd \u0b8e\u0ba9\u0bcd\u0baa\u0ba4\u0bc8 \u0b86\u0bb0\u0bbe\u0baf\u0bcd\u0b95\u0bbf\u0bb1\u0bc7\u0ba9\u0bcd. \u0b87\u0ba8\u0bcd\u0ba4 \u0b86\u0baf\u0bcd\u0bb5\u0bc1 \u0b9a\u0bc1\u0bae\u0bbe\u0bb0\u0bcd <strong>12\u201315 \u0ba8\u0bbf\u0bae\u0bbf\u0b9f\u0b99\u0bcd\u0b95\u0bb3\u0bcd</strong> \u0b86\u0b95\u0bc1\u0bae\u0bcd. \u0b89\u0b99\u0bcd\u0b95\u0bb3\u0bcd \u0baa\u0ba4\u0bbf\u0bb2\u0bcd\u0b95\u0bb3\u0bcd \u0bae\u0bc1\u0bb1\u0bcd\u0bb1\u0bbf\u0bb2\u0bc1\u0bae\u0bcd \u0b85\u0ba8\u0bbe\u0bae\u0ba4\u0bc7\u0baf\u0bae\u0bbe\u0ba9\u0bb5\u0bc8.</span>`,
+      tg: `<span${tf}>Tamil Nadu-\u0bb2\u0bcd \u0bae\u0b95\u0bcd\u0b95\u0bb3\u0bcd AI tools-\u0b90 \u0b8e\u0baa\u0bcd\u0baa\u0b9f\u0bbf \u0baa\u0bc1\u0bb0\u0bbf\u0b9e\u0bcd\u0b9a\u0bc1\u0b95\u0bcd\u0b95\u0bbf\u0bb1\u0bbe\u0b99\u0bcd\u0b95\u0ba9\u0bcd\u0ba9\u0bc1 research \u0baa\u0ba3\u0bcd\u0bb1\u0bc7\u0ba9\u0bcd. \u0b87\u0ba8\u0bcd\u0ba4 survey \u0b9a\u0bc1\u0bae\u0bbe\u0bb0\u0bcd <strong>12\u201315 minutes</strong> \u0b86\u0b95\u0bc1\u0bae\u0bcd. \u0b89\u0b99\u0bcd\u0b95\u0bb3\u0bcd answers completely anonymous.</span>`
+    };
+    const contactLabel = {
+      en:'Questions? Reach me at',
+      ta:`<span${tf}>\u0b95\u0bc7\u0bb3\u0bcd\u0bb5\u0bbf\u0b95\u0bb3\u0bcd? \u0b8e\u0ba9\u0bcd\u0ba9\u0bc8 \u0ba4\u0bca\u0b9f\u0bb0\u0bcd\u0baa\u0bc1 \u0b95\u0bca\u0bb3\u0bcd\u0bb3\u0bb5\u0bc1\u0bae\u0bcd</span>`,
+      tg:`<span${tf}>Questions \u0b87\u0bb0\u0bc1\u0ba8\u0bcd\u0ba4\u0bbe contact \u0baa\u0ba3\u0bcd\u0ba3\u0bc1\u0b99\u0bcd\u0b95</span>`
+    };
+    const anonNote = {
+      en:'No names collected \u00b7 Responses stored securely \u00b7 Data used for research only',
+      ta:`<span${tf}>\u0baa\u0bc6\u0baf\u0bb0\u0bcd\u0b95\u0bb3\u0bcd \u0b9a\u0bc7\u0b95\u0bb0\u0bbf\u0b95\u0bcd\u0b95\u0baa\u0bcd\u0baa\u0b9f\u0bc1\u0bb5\u0ba4\u0bbf\u0bb2\u0bcd\u0bb2\u0bc8 \u00b7 \u0baa\u0bbe\u0ba4\u0bc1\u0b95\u0bbe\u0baa\u0bcd\u0baa\u0bbe\u0b95 \u0b9a\u0bc7\u0bae\u0bbf\u0b95\u0bcd\u0b95\u0baa\u0bcd\u0baa\u0b9f\u0bc1\u0b95\u0bbf\u0bb1\u0ba4\u0bc1 \u00b7 \u0b86\u0bb0\u0bbe\u0baf\u0bcd\u0b9a\u0bcd\u0b9a\u0bbf\u0b95\u0bcd\u0b95\u0bbe\u0b95 \u0bae\u0b9f\u0bcd\u0b9f\u0bc1\u0bae\u0bcd</span>`,
+      tg:`<span${tf}>\u0baa\u0bc7\u0bb0\u0bc1 collect \u0baa\u0ba3\u0bcd\u0bb1\u0ba4\u0bbf\u0bb2\u0bcd\u0bb2\u0bc8 \u00b7 Securely save \u0b86\u0b95\u0bc1\u0ba4\u0bc1 \u00b7 Research \u0bae\u0b9f\u0bcd\u0b9f\u0bc1\u0bae\u0bcd</span>`
+    };
+    const weAsk = {
+      en:'We ask about', ta:`<span${tf}>\u0ba8\u0bbe\u0bae\u0bcd \u0b95\u0bc7\u0b9f\u0bcd\u0baa\u0bb5\u0bc8</span>`, tg:`<span${tf}>\u0ba8\u0bbe\u0bae\u0bcd \u0b95\u0bc7\u0b95\u0bcd\u0b95\u0bb1\u0ba4\u0bc1</span>`
+    };
+    const weDont = {
+      en:"We don't ask", ta:`<span${tf}>\u0ba8\u0bbe\u0bae\u0bcd \u0b95\u0bc7\u0b9f\u0bcd\u0b95\u0bbe\u0ba4\u0bb5\u0bc8</span>`, tg:`<span${tf}>\u0ba8\u0bbe\u0bae\u0bcd \u0b95\u0bc7\u0b95\u0bcd\u0b95\u0bbe\u0ba4\u0ba4\u0bc1</span>`
+    };
+    const askItems = {
+      en:'AI awareness &amp; experience<br>Barriers to using AI<br>How you like to learn',
+      ta:`<span${tf}>AI \u0bb5\u0bbf\u0bb4\u0bbf\u0baa\u0bcd\u0baa\u0bc1\u0ba3\u0bb0\u0bcd\u0bb5\u0bc1<br>\u0ba4\u0b9f\u0bc8\u0b95\u0bb3\u0bcd<br>\u0b95\u0bb1\u0bcd\u0b95\u0bc1\u0bae\u0bcd \u0bae\u0bc1\u0bb1\u0bc8</span>`,
+      tg:`<span${tf}>AI \u0baa\u0ba4\u0bcd\u0ba4\u0bbf \u0b8e\u0ba9\u0bcd\u0ba9 \u0ba4\u0bc6\u0bb0\u0bbf\u0baf\u0bc1\u0bae\u0bcd<br>\u0b8e\u0ba9\u0bcd\u0ba9 \u0ba4\u0b9f\u0bc1\u0b95\u0bcd\u0b95\u0bc1\u0ba4\u0bc1<br>\u0b8e\u0baa\u0bcd\u0baa\u0b9f\u0bbf learn \u0baa\u0ba3\u0bcd\u0bb1\u0bc0\u0b99\u0bcd\u0b95</span>`
+    };
+    const dontAskItems = {
+      en:'Your name<br>Phone number<br>Any personal ID',
+      ta:`<span${tf}>\u0b89\u0b99\u0bcd\u0b95\u0bb3\u0bcd \u0baa\u0bc6\u0baf\u0bb0\u0bcd<br>\u0ba4\u0bca\u0bb2\u0bc8\u0baa\u0bc7\u0b9a\u0bbf \u0b8e\u0ba3\u0bcd<br>\u0b85\u0b9f\u0bc8\u0baf\u0bbe\u0bb3 \u0b86\u0bb5\u0ba3\u0bae\u0bcd</span>`,
+      tg:`<span${tf}>\u0b89\u0b99\u0bcd\u0b95\u0bb3\u0bcd \u0baa\u0bc7\u0bb0\u0bc1<br>Phone number<br>Personal ID \u0b8e\u0ba4\u0bc1\u0bb5\u0bc1\u0bae\u0bcd</span>`
+    };
+
     return `
-    <div class="slide" id="slide-${idx}">
-      ${sketchImg('sketch-cover sketch-zone', '1200x360')}
-      <div class="cover-title">
-        ${lang==='en' ? 'Tamil Nadu AI Literacy Survey'
-          : lang==='ta' ? '<span style="font-family:\'Noto Sans Tamil\',sans-serif">தமிழ்நாடு AI கல்வியறிவு ஆய்வு</span>'
-          : '<span style="font-family:\'Noto Sans Tamil\',sans-serif">Tamil Nadu AI Literacy Survey</span>'}
+    <div class="slide" id="slide-${idx}" style="overflow-y:auto;max-height:calc(100vh - 90px)">
+
+      <!-- ── sketch zone: your Fresco PNGs go here ── -->
+      <div style="position:relative;height:160px;margin-bottom:8px;overflow:hidden">
+
+        <!-- left corner character — place your PNG at sketches/char-left.png -->
+        <img src="sketches/char-left.png" alt=""
+          style="position:absolute;left:-10px;top:0;height:160px;width:auto;object-fit:contain"
+          onerror="this.style.display='none'">
+
+        <!-- right corner character — place your PNG at sketches/char-right.png -->
+        <img src="sketches/char-right.png" alt=""
+          style="position:absolute;right:-10px;top:0;height:160px;width:auto;object-fit:contain"
+          onerror="this.style.display='none'">
+
+        <!-- pink floating accents (keep these — no sketch needed) -->
+        <!-- star top-left -->
+        <svg style="position:absolute;left:155px;top:12px" width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M8 0v16M0 8h16M2.3 2.3l11.4 11.4M13.7 2.3L2.3 13.7" stroke="#e8186d" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <!-- star top-right -->
+        <svg style="position:absolute;right:155px;top:8px" width="13" height="13" viewBox="0 0 13 13" fill="none">
+          <path d="M6.5 0v13M0 6.5h13M1.9 1.9l9.2 9.2M11.1 1.9L1.9 11.1" stroke="#e8186d" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+        <!-- centre star -->
+        <svg style="position:absolute;left:50%;top:10px;transform:translateX(-50%)" width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <path d="M7 0v14M0 7h14M2 2l10 10M12 2L2 12" stroke="#e8186d" stroke-width="1.7" stroke-linecap="round"/>
+        </svg>
+        <!-- pink envelope bottom-left -->
+        <svg style="position:absolute;left:8px;top:110px" width="32" height="26" viewBox="0 0 32 26" fill="none">
+          <rect x="1" y="1" width="30" height="20" rx="4" stroke="#e8186d" stroke-width="2"/>
+          <path d="M1 5 L16 13 L31 5" stroke="#e8186d" stroke-width="2" stroke-linecap="round"/>
+          <path d="M10 21 L14 25 L19 19" stroke="#e8186d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <!-- pink globe top-right area -->
+        <svg style="position:absolute;right:8px;top:12px" width="34" height="34" viewBox="0 0 34 34" fill="none">
+          <circle cx="17" cy="17" r="14" stroke="#e8186d" stroke-width="2.2"/>
+          <ellipse cx="17" cy="17" rx="7" ry="14" stroke="#e8186d" stroke-width="2.2"/>
+          <line x1="3" y1="17" x2="31" y2="17" stroke="#e8186d" stroke-width="2"/>
+          <line x1="6" y1="10" x2="28" y2="10" stroke="#e8186d" stroke-width="1.3" opacity=".6"/>
+          <line x1="6" y1="24" x2="28" y2="24" stroke="#e8186d" stroke-width="1.3" opacity=".6"/>
+        </svg>
+        <!-- pink share icon -->
+        <svg style="position:absolute;right:52px;top:16px" width="26" height="26" viewBox="0 0 26 26" fill="none">
+          <path d="M13 18V5 M7 11 L13 5 L19 11" stroke="#e8186d" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M3 20v4h20v-4" stroke="#e8186d" stroke-width="2.2" stroke-linecap="round"/>
+        </svg>
+        <!-- blue halftone dots — left -->
+        <svg style="position:absolute;left:120px;top:95px" width="44" height="34" viewBox="0 0 44 34" fill="none" opacity=".55">
+          <circle cx="6" cy="6" r="2.2" fill="#3b7bd4"/><circle cx="14" cy="6" r="2.2" fill="#3b7bd4"/>
+          <circle cx="22" cy="6" r="2.2" fill="#3b7bd4"/><circle cx="30" cy="6" r="2.2" fill="#3b7bd4"/>
+          <circle cx="6" cy="14" r="2.2" fill="#3b7bd4"/><circle cx="14" cy="14" r="2.2" fill="#3b7bd4"/>
+          <circle cx="22" cy="14" r="2.2" fill="#3b7bd4"/><circle cx="6" cy="22" r="2.2" fill="#3b7bd4"/>
+          <circle cx="14" cy="22" r="2.2" fill="#3b7bd4"/>
+        </svg>
+        <!-- blue halftone dots — right -->
+        <svg style="position:absolute;right:115px;top:90px" width="40" height="30" viewBox="0 0 40 30" fill="none" opacity=".5">
+          <circle cx="6" cy="6" r="2" fill="#3b7bd4"/><circle cx="14" cy="6" r="2" fill="#3b7bd4"/>
+          <circle cx="22" cy="6" r="2" fill="#3b7bd4"/><circle cx="30" cy="6" r="2" fill="#3b7bd4"/>
+          <circle cx="6" cy="14" r="2" fill="#3b7bd4"/><circle cx="14" cy="14" r="2" fill="#3b7bd4"/>
+          <circle cx="22" cy="14" r="2" fill="#3b7bd4"/>
+        </svg>
+        <!-- pink swoosh left -->
+        <svg style="position:absolute;left:130px;top:60px" width="100" height="38" viewBox="0 0 100 38" fill="none">
+          <path d="M0 32 Q40 8 100 14" stroke="#e8186d" stroke-width="2.4" stroke-linecap="round"/>
+        </svg>
+        <!-- pink swoosh right -->
+        <svg style="position:absolute;right:125px;top:56px" width="100" height="38" viewBox="0 0 100 38" fill="none">
+          <path d="M100 32 Q60 8 0 14" stroke="#e8186d" stroke-width="2.4" stroke-linecap="round"/>
+        </svg>
       </div>
-      <div class="cover-sub${tclass}"${tf}>
-        ${lang==='en'
-          ? 'Help us understand how AI can be made more accessible in Tamil. Takes about 12–15 minutes. All answers are anonymous.'
-          : lang==='ta'
-          ? 'AI-ஐ தமிழில் அணுகக்கூடியதாக மாற்ற உதவுங்கள். சுமார் 12–15 நிமிடங்கள். அனைத்து பதில்களும் அநாமதேயமானவை.'
-          : 'AI-ஐ Tamil-ல accessible ஆக்க உதவுங்கள். சுமார் 12–15 minutes. எல்லா answers-உம் anonymous.'}
+
+      <!-- intro card -->
+      <div style="border:1.5px solid #f0e0ea;border-radius:14px;padding:20px 22px;margin-bottom:14px">
+
+        <!-- avatar + name -->
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
+          <div style="width:52px;height:52px;border-radius:50%;border:2px solid #f0c0d8;overflow:hidden;flex-shrink:0;background:#fdf0f7;display:flex;align-items:center;justify-content:center;font-size:22px">
+            <img src="sketches/avatar.jpg" alt="Photo" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'">
+            🧑
+          </div>
+          <div>
+            <!-- ✏️ CHANGE: your name -->
+            <div style="font-size:16px;font-weight:600;color:#0f0f0f">Your Name Here</div>
+            <!-- ✏️ CHANGE: your college and city -->
+            <div style="font-size:13px;color:#737373;margin-top:2px">Student · Your College Name · Germany</div>
+          </div>
+        </div>
+
+        <!-- why this survey block -->
+        <div style="background:#fdf0f7;border-radius:9px;padding:14px 16px;margin-bottom:14px">
+          <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <rect x="1" y="1" width="14" height="14" rx="3" stroke="#e8186d" stroke-width="1.6"/>
+              <line x1="4" y1="5.5" x2="12" y2="5.5" stroke="#e8186d" stroke-width="1.5" stroke-linecap="round"/>
+              <line x1="4" y1="8" x2="12" y2="8" stroke="#e8186d" stroke-width="1.5" stroke-linecap="round"/>
+              <line x1="4" y1="10.5" x2="9" y2="10.5" stroke="#e8186d" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <span style="font-size:12px;font-weight:600;color:#e8186d;letter-spacing:.04em;text-transform:uppercase">
+              ${lang==='en'?'Why this survey?':lang==='ta'?`<span${tf}>ஏன் இந்த ஆய்வு?</span>`:`<span${tf}>ஏன் இந்த survey?</span>`}
+            </span>
+          </div>
+          <div style="font-size:14px;line-height:1.72;color:#3a2030">
+            ${purpose[lang]}
+          </div>
+        </div>
+
+        <!-- divider -->
+        <div style="height:1px;background:#f0e0ea;margin-bottom:14px"></div>
+
+        <!-- contact -->
+        <div style="font-size:12px;color:#aaa;margin-bottom:8px">
+          ${lang==='en'?'Contact me':'<span'+tf+'>'+( lang==='ta'?'தொடர்பு கொள்ளவும்':'Contact பண்ணுங்க')+'</span>'}
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+
+          <!-- email -->
+          <div style="display:flex;align-items:center;gap:12px;padding:11px 14px;background:#fdf5fa;border:1px solid #f0e0ea;border-radius:9px">
+            <svg width="20" height="16" viewBox="0 0 20 16" fill="none">
+              <rect x="1" y="1" width="18" height="14" rx="3" stroke="#e8186d" stroke-width="1.8"/>
+              <path d="M1 4 L10 9.5 L19 4" stroke="#e8186d" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+            <div>
+              <div style="font-size:11px;color:#aaa;margin-bottom:1px">Email</div>
+              <!-- ✏️ CHANGE: your email -->
+              <a href="mailto:yourname@gmail.com" style="font-size:14px;font-weight:500;color:#e8186d;text-decoration:none">yourname@gmail.com</a>
+            </div>
+          </div>
+
+          <!-- whatsapp -->
+          <div style="display:flex;align-items:center;gap:12px;padding:11px 14px;background:#f2fbf5;border:1px solid #c8ecd4;border-radius:9px">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <circle cx="10" cy="10" r="9" stroke="#25d366" stroke-width="1.8"/>
+              <path d="M13.8 12.3c-.2-.1-1.2-.6-1.4-.7-.2-.1-.3-.1-.5.1-.1.2-.5.7-.6.8-.1.1-.2.1-.4 0-.2-.1-.8-.3-1.6-1-.6-.5-1-1.2-1.1-1.4-.1-.2 0-.3.1-.4l.3-.4c.1-.1.1-.2.2-.3 0-.1 0-.2 0-.3L8.5 7.4c-.1-.3-.3-.3-.4-.3h-.4c-.1 0-.3.1-.5.3-.2.2-.6.6-.6 1.5 0 .9.6 1.7.7 1.8.1.1 1.3 2 3.1 2.8.4.2.8.3 1 .4.4.1.8.1 1.1.1.3 0 1-.4 1.1-.8.1-.4.1-.7 0-.8z" fill="#25d366"/>
+            </svg>
+            <div>
+              <div style="font-size:11px;color:#aaa;margin-bottom:1px">WhatsApp</div>
+              <!-- ✏️ CHANGE: your number -->
+              <a href="https://wa.me/491234567890" style="font-size:14px;font-weight:500;color:#25d366;text-decoration:none">+49 123 456 7890</a>
+            </div>
+          </div>
+
+        </div>
       </div>
-      <button class="start-btn" onclick="next()">
-        ${lang==='en' ? 'Start survey →'
-          : lang==='ta' ? '<span style="font-family:\'Noto Sans Tamil\',sans-serif">தொடங்குங்கள் →</span>'
-          : '<span style="font-family:\'Noto Sans Tamil\',sans-serif">Start பண்ணுங்க →</span>'}
-      </button>
+
+      <div style="font-size:12px;color:#bbb;text-align:center;margin-bottom:16px;line-height:1.6">${anonNote[lang]}</div>
+
+      <button class="start-btn" onclick="next()" style="width:100%;font-size:16px;padding:16px">${btnText}</button>
     </div>`;
   }
 
@@ -765,6 +957,8 @@ function renderSlide(s, idx) {
 
   // answer area
   if (s.type === 'radio') {
+    const otherIdx = s.opts.length;
+    const isOtherSel = s.hasOther && typeof ans === 'string' && ans.startsWith('__other__');
     html += `<div class="opts">`;
     s.opts.forEach((o, i) => {
       const sel = ans === i ? 'selected' : '';
@@ -774,6 +968,21 @@ function renderSlide(s, idx) {
         <span class="opt-label">${o[lang]}</span>
       </button>`;
     });
+    if (s.hasOther) {
+      const otherLabel = lang==='ta'?'<span style="font-family:\'Noto Sans Tamil\',sans-serif">மற்றவை — உங்கள் பதிலை உள்ளிடவும்</span>':lang==='tg'?'<span style="font-family:\'Noto Sans Tamil\',sans-serif">வேற ஏதாவது — type பண்ணுங்க</span>':'Other — type your own';
+      const otherVal = isOtherSel ? (ans||'').replace('__other__','') : '';
+      const otherSel = isOtherSel ? 'selected' : '';
+      html += `<button class="opt ${otherSel}" onclick="pickOther()" style="flex-direction:column;align-items:flex-start;gap:6px">
+        <div style="display:flex;align-items:center;gap:10px;width:100%">
+          <span class="opt-circle"></span>
+          <span class="opt-label" ${tf}>${otherLabel}</span>
+        </div>
+        ${isOtherSel ? `<input id="other-input" type="text" value="${otherVal}"
+          oninput="saveOther()" onclick="event.stopPropagation()"
+          placeholder="${lang==='ta'?'இங்கே எழுதுங்கள்…':lang==='tg'?'இங்க type பண்ணுங்க…':'Write here…'}"
+          style="width:100%;padding:8px 10px;border-radius:7px;border:1.5px solid rgba(255,255,255,0.7);background:#fff;color:#0f0f0f;font-size:14px;font-family:inherit;outline:none">` : ''}
+      </button>`;
+    }
     html += `</div>`;
   }
 
@@ -788,6 +997,22 @@ function renderSlide(s, idx) {
         <span class="opt-label">${o[lang]}</span>
       </button>`;
     });
+    if (s.hasOther) {
+      const otherLabel = lang==='ta'?'<span style="font-family:\'Noto Sans Tamil\',sans-serif">மற்றவை — உங்கள் பதிலை உள்ளிடவும்</span>':lang==='tg'?'<span style="font-family:\'Noto Sans Tamil\',sans-serif">வேற ஏதாவது — type பண்ணுங்க</span>':'Other — type your own';
+      const hasOtherChecked = arr.includes('other');
+      const otherText = answers[s.id+'_other'] || '';
+      const otherSel = hasOtherChecked ? 'selected' : '';
+      html += `<button class="opt ${otherSel}" onclick="togOther()" style="flex-direction:column;align-items:flex-start;gap:6px">
+        <div style="display:flex;align-items:center;gap:10px;width:100%">
+          <span class="opt-sq"></span>
+          <span class="opt-label" ${tf}>${otherLabel}</span>
+        </div>
+        ${hasOtherChecked ? `<input id="other-check-input" type="text" value="${otherText}"
+          oninput="saveOtherCheck()" onclick="event.stopPropagation()"
+          placeholder="${lang==='ta'?'இங்கே எழுதுங்கள்…':lang==='tg'?'இங்க type பண்ணுங்க…':'Write here…'}"
+          style="width:100%;padding:8px 10px;border-radius:7px;border:1.5px solid rgba(255,255,255,0.7);background:#fff;color:#0f0f0f;font-size:14px;font-family:inherit;outline:none">` : ''}
+      </button>`;
+    }
     html += `</div>`;
     if (s.maxSelect) {
       html += `<div style="font-size:12px;color:#aaa;margin-top:8px">
@@ -888,14 +1113,16 @@ function updateUI(idx) {
 ══════════════════════════════════════════════════════════════ */
 window.pick = function(v) {
   answers[SLIDES[cur].id] = v;
-  // re-render just the current slide options
   const s = SLIDES[cur];
+  // CRITICAL: scope to current slide only — not all slides in DOM
+  const slide = document.getElementById('slide-' + cur);
+  if (!slide) return;
   if (s.type === 'radio') {
-    stage.querySelectorAll('.opt').forEach((el, i) => {
+    slide.querySelectorAll('.opt').forEach((el, i) => {
       el.classList.toggle('selected', i === v);
     });
   } else if (s.type === 'scale') {
-    stage.querySelectorAll('.scale-btn').forEach((el, i) => {
+    slide.querySelectorAll('.scale-btn').forEach((el, i) => {
       el.classList.toggle('selected', (i + 1) === v);
     });
   }
@@ -913,10 +1140,62 @@ window.tog = function(i) {
     arr.push(i);
   }
   answers[s.id] = [...arr];
-  stage.querySelectorAll('.opt').forEach((el, j) => {
+  // CRITICAL: scope to current slide only
+  const slide = document.getElementById('slide-' + cur);
+  if (!slide) return;
+  slide.querySelectorAll('.opt').forEach((el, j) => {
     el.classList.toggle('selected', arr.includes(j));
   });
   document.getElementById('err-msg').textContent = '';
+};
+
+window.pickOther = function() {
+  const s = SLIDES[cur];
+  const wasOther = typeof answers[s.id] === 'string' && answers[s.id].startsWith('__other__');
+  answers[s.id] = wasOther ? undefined : '__other__';
+  // re-render opts
+  const slide = document.getElementById('slide-' + cur);
+  const allOpts = slide ? slide.querySelectorAll('.opt') : [];
+  allOpts.forEach((el, i) => {
+    if (i < s.opts.length) el.classList.toggle('selected', false);
+    else el.classList.toggle('selected', !wasOther);
+  });
+  // re-render slide to show/hide text input
+  const el = document.getElementById('slide-'+cur);
+  if (el) { el.outerHTML = renderSlide(s, cur); showSlide(cur, 0); }
+  setTimeout(() => {
+    const inp = document.getElementById('other-input');
+    if (inp) inp.focus();
+  }, 80);
+};
+
+window.saveOther = function() {
+  const inp = document.getElementById('other-input');
+  if (inp) answers[SLIDES[cur].id] = '__other__' + inp.value;
+};
+
+window.togOther = function() {
+  const s = SLIDES[cur];
+  let arr = answers[s.id] || [];
+  const hasIt = arr.includes('other');
+  if (hasIt) {
+    arr = arr.filter(x => x !== 'other');
+    delete answers[s.id + '_other'];
+  } else {
+    arr.push('other');
+  }
+  answers[s.id] = [...arr];
+  const el = document.getElementById('slide-'+cur);
+  if (el) { el.outerHTML = renderSlide(s, cur); showSlide(cur, 0); }
+  setTimeout(() => {
+    const inp = document.getElementById('other-check-input');
+    if (inp) inp.focus();
+  }, 80);
+};
+
+window.saveOtherCheck = function() {
+  const inp = document.getElementById('other-check-input');
+  if (inp) answers[SLIDES[cur].id + '_other'] = inp.value;
 };
 
 window.saveText = function() {
