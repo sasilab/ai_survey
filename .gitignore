@@ -1,0 +1,16 @@
+# --- Secrets / environment ---
+.env
+.env.local
+.env.*.local
+
+# --- Claude Code (per-project state) ---
+.claude/
+CLAUDE.md
+SESSION_LOG.md
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+
+# --- Logs ---
+*.log
