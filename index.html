@@ -952,6 +952,13 @@ document.addEventListener('keydown', e => {
    SUBMIT
 ══════════════════════════════════════════════════════════════ */
 async function submitSurvey() {
+  // Guard against double submission (e.g. Enter + click, or rapid taps)
+  if (window._submitting) return;
+  window._submitting = true;
+  document.getElementById('btn-next').disabled = true;
+  document.getElementById('btn-next').textContent =
+    lang === 'en' ? 'Submitting...' : 'Wird gesendet...';
+
   // Data collection order:
   // 1. Appwrite (primary — currently unconfigured)
   // 2. Google Sheets (active — fire-and-forget)
