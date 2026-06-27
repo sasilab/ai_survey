@@ -2,11 +2,33 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>AI Literacy Survey · தமிழ்நாடு AI ஆய்வு</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>BreezyBuddy · Beta Tester Survey</title>
 
 <!-- ═══════════════════════════════════════════════════════
      APPWRITE CONFIG — paste your IDs here
+     ═══════════════════════════════════════════════════════
+     The Appwrite collection must define these attributes (field names):
+       consent              (string)
+       name                 (string)
+       email                (string)
+       device               (string)
+       android_version      (string)
+       notification_lang    (string)
+       notification_freq    (string)
+       personality_style    (string)
+       knows_api_key        (string)
+       willing_api_key      (string)
+       phone_usage_hours    (integer)
+       study_interests      (string)
+       feedback_channel     (string)
+       feedback_frequency   (string)
+       whatsapp_number      (string)
+       uninstall_reason     (string)
+       other_thoughts       (string)
+       survey_lang          (string)
+       duration_secs        (integer)
+       submitted_at         (string, ISO datetime)
      ═══════════════════════════════════════════════════════ -->
 <script>
   const AW_ENDPOINT    = 'https://cloud.appwrite.io/v1';
@@ -44,9 +66,11 @@ body {
 /* ── progress bar ── */
 #progress-bar {
   position: fixed; top: 0; left: 0;
-  height: 3px; background: var(--accent);
-  transition: width .4s ease; z-index: 100;
+  height: 3px; width: 100%; background: var(--accent);
+  transform: scaleX(0); transform-origin: left center;
+  transition: transform .4s ease; z-index: 101;
   border-radius: 0 2px 2px 0;
+  will-change: transform;
 }
 
 /* ── top bar ── */
@@ -59,12 +83,13 @@ body {
 }
 #q-counter { font-size: 12px; color: var(--muted); pointer-events: none; }
 #lang-switcher {
-  display: flex; gap: 6px; pointer-events: all;
+  display: flex; gap: 6px; pointer-events: all; flex-shrink: 0;
 }
 .lang-btn {
-  padding: 4px 12px; border-radius: 20px; font-size: 11.5px;
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 44px; padding: 6px 14px; border-radius: 20px; font-size: 13px;
   border: 1px solid var(--border); background: var(--bg);
-  color: var(--muted); cursor: pointer;
+  color: var(--muted); cursor: pointer; white-space: nowrap;
   transition: all .15s; font-family: var(--font);
 }
 .lang-btn.active {
@@ -85,6 +110,8 @@ body {
 .slide {
   position: absolute;
   width: 100%; max-width: 640px;
+  max-height: calc(100vh - 96px); overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   opacity: 0; pointer-events: none;
   transform: translateY(24px);
   transition: opacity .28s ease, transform .28s ease;
@@ -154,9 +181,9 @@ body {
 .opts { display: flex; flex-direction: column; gap: 8px; margin-top: 20px; }
 .opt {
   display: flex; align-items: center; gap: 12px;
-  padding: 14px 16px; border-radius: var(--radius);
+  padding: 14px 16px; min-height: 48px; border-radius: var(--radius);
   border: 1.5px solid var(--border); background: var(--bg);
-  cursor: pointer; transition: all .14s;
+  cursor: pointer; transition: border-color .14s, background-color .14s, color .14s;
   font-size: 15px; color: var(--text); text-align: left;
   width: 100%; font-family: var(--font);
 }
@@ -192,7 +219,15 @@ body {
 .opt.selected .opt-sq::after {
   content: '✓'; font-size: 11px; line-height: 1; color: #ffffff;
 }
-.opt-label { flex: 1; line-height: 1.45; }
+.opt-label { flex: 1; min-width: 0; line-height: 1.45; overflow-wrap: break-word; word-break: break-word; }
+
+/* "Other" free-text input that lives inside an .opt row */
+.other-input {
+  flex: 1; min-width: 0; border: none; background: transparent; outline: none;
+  font-size: 16px; font-family: var(--font); color: inherit;
+}
+.other-input::placeholder { color: var(--muted); }
+.opt.selected .other-input::placeholder { color: rgba(255,255,255,0.7); }
 
 /* scale */
 .scale-wrap { margin-top: 20px; }
@@ -214,16 +249,18 @@ body {
 }
 .scale-labels.ta { font-family: var(--tamil-font); font-size: 11px; }
 
-/* textarea */
-.q-textarea {
+/* textarea + single-line text input */
+.q-textarea, .q-input {
   width: 100%; margin-top: 20px;
   padding: 14px 16px; border-radius: var(--radius);
   border: 1.5px solid var(--border); background: var(--surface);
-  font-size: 15px; font-family: var(--font); color: var(--text);
-  resize: none; min-height: 120px; line-height: 1.6;
-  transition: border-color .14s;
+  font-size: 16px; /* 16px min prevents iOS auto-zoom on focus */
+  font-family: var(--font); color: var(--text);
+  line-height: 1.6; transition: border-color .14s;
 }
-.q-textarea:focus { outline: none; border-color: var(--accent); }
+.q-textarea { resize: none; min-height: 120px; }
+.q-input { min-height: 52px; }
+.q-textarea:focus, .q-input:focus { outline: none; border-color: var(--accent); }
 
 /* pink dot accent on section label */
 .sec-label::before {
@@ -237,17 +274,18 @@ body {
 #bottombar {
   position: fixed; bottom: 0; left: 0; right: 0;
   display: flex; align-items: center; justify-content: space-between;
-  padding: 16px 24px;
+  /* extra bottom padding clears phone gesture-navigation bars */
+  padding: 16px 24px calc(16px + env(safe-area-inset-bottom));
   background: linear-gradient(to top, var(--bg) 70%, transparent);
 }
 #btn-back {
-  font-size: 13px; color: var(--muted); background: none;
-  border: none; cursor: pointer; padding: 8px 0;
+  font-size: 14px; color: var(--muted); background: none;
+  border: none; cursor: pointer; padding: 12px 8px; min-height: 44px;
   font-family: var(--font);
 }
 #btn-back:hover { color: var(--text); }
 #btn-next {
-  padding: 13px 28px; border-radius: var(--radius);
+  padding: 13px 28px; min-height: 44px; border-radius: var(--radius);
   background: var(--accent); color: var(--accent-inv);
   border: none; font-size: 15px; font-weight: 500;
   cursor: pointer; font-family: var(--font);
@@ -287,6 +325,39 @@ body {
 .start-btn:hover { opacity: .85; }
 .done-icon { font-size: 48px; margin-bottom: 16px; }
 
+/* ── done-screen actions + status ── */
+#done-status { font-size: 14px; color: var(--muted); line-height: 1.5; margin-top: 4px; }
+#done-actions { display: flex; flex-direction: column; gap: 10px; align-items: center; margin-top: 22px; }
+.done-action-btn {
+  padding: 12px 24px; min-height: 44px; border-radius: var(--radius);
+  background: var(--accent); color: var(--accent-inv); border: none;
+  font-size: 15px; font-weight: 500; cursor: pointer;
+  font-family: var(--font); transition: opacity .15s;
+}
+.done-action-btn:hover { opacity: .85; }
+.done-action-btn:disabled { opacity: .5; cursor: default; }
+.done-action-btn.secondary {
+  background: var(--bg); color: var(--accent); border: 1.5px solid var(--accent);
+}
+
+/* ── admin export panel (type "breezy" on the done screen) ── */
+#admin-panel {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0,0,0,.5);
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.admin-card {
+  background: var(--bg); border-radius: var(--radius);
+  width: 100%; max-width: 560px; max-height: 80vh; overflow: auto; padding: 20px;
+}
+.admin-title { font-size: 18px; font-weight: 600; margin-bottom: 14px; }
+.admin-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+.admin-pre {
+  background: var(--surface); border-radius: 8px; padding: 12px;
+  font-size: 11px; white-space: pre-wrap; word-break: break-word;
+  color: var(--text); max-height: 40vh; overflow: auto;
+}
+
 /* ── error ── */
 #err-msg {
   font-size: 13px; color: var(--danger);
@@ -295,24 +366,24 @@ body {
 
 /* ── mobile tweaks ── */
 @media (max-width: 480px) {
-  #stage { padding: 64px 16px 72px; }
+  #stage { padding: 64px 16px 76px; }
   .scale-btn { width: 46px; height: 46px; font-size: 14px; }
   #topbar { padding: 14px 16px 0; }
-  #bottombar { padding: 14px 16px; }
-  .lang-btn { padding: 3px 9px; font-size: 11px; }
+  #bottombar { padding: 14px 16px calc(14px + env(safe-area-inset-bottom)); }
+  .lang-btn { padding: 6px 12px; font-size: 12px; }
+  #enter-hint { display: none; } /* no physical keyboard on phones */
 }
 </style>
 </head>
 <body>
 
-<div id="progress-bar" style="width:0%"></div>
+<div id="progress-bar"></div>
 
 <div id="topbar">
   <span id="q-counter"></span>
   <div id="lang-switcher">
     <button class="lang-btn active" onclick="setLang('en',this)">English</button>
-    <button class="lang-btn" onclick="setLang('ta',this)">தமிழ்</button>
-    <button class="lang-btn" onclick="setLang('tg',this)">Tanglish</button>
+    <button class="lang-btn" onclick="setLang('de',this)">Deutsch</button>
   </div>
 </div>
 
@@ -336,358 +407,175 @@ body {
    sketch (css class for sketch zone — shown on first Q of section),
    trap, q{en,ta,tg}, sub{en,ta,tg}, opts[], low{}, high{}
 ══════════════════════════════════════════════════════════════ */
+/* Maps question id → sketch filename suffix (sketches/qNN-<suffix>.png) */
+const SKETCH_MAP = {
+  1:'consent', 2:'name', 3:'email', 4:'device',
+  5:'android-version', 6:'language', 7:'frequency',
+  8:'personality', 9:'api-key', 10:'willing-api',
+  11:'phone-usage', 12:'study-interests',
+  13:'feedback-channel', 14:'feedback-frequency',
+  15:'whatsapp', 16:'uninstall', 17:'other-thoughts'
+};
+
+/* Single-line text questions that need a specific mobile keyboard / autofill.
+   Anything not listed here renders as a multi-line <textarea>. */
+const INPUT_ATTRS = {
+  2:  { type:'text',  autocomplete:'name' },                       // name
+  3:  { type:'email', inputmode:'email', autocomplete:'email' },   // email
+  15: { type:'tel',   inputmode:'tel',   autocomplete:'tel' },     // WhatsApp number
+};
+
 const SLIDES = [
 
 /* ── WELCOME ── */
 { id:'welcome', type:'welcome' },
 
-/* ══ SECTION 1 ══ */
+/* ══ SECTION 1: INFORMED CONSENT ══ */
 { id:1, type:'radio',
-  sec:{en:'About You', ta:'உங்களைப் பற்றி', tg:'உங்களைப் பத்தி'},
-  sketch:'sketch-s1',
-  q:{en:'What is your age group?',
-     ta:'உங்கள் வயது வரம்பு என்ன?',
-     tg:'உங்கள் age group என்ன?'},
-  opts:[{en:'Under 15',  ta:'15 வயதிற்கு கீழ்',   tg:'15 வயதுக்கு கீழ்'},
-        {en:'15 – 18',   ta:'15 – 18',              tg:'15 – 18'},
-        {en:'19 – 24',   ta:'19 – 24',              tg:'19 – 24'},
-        {en:'25 – 35',   ta:'25 – 35',              tg:'25 – 35'},
-        {en:'35+',       ta:'35+',                  tg:'35+'}]},
+  sec:{en:'Informed Consent', de:'Einwilligung'},
+  q:{en:'I understand that this is a beta test of BreezyBuddy. My feedback will be used to improve the app. I consent to participate voluntarily and can stop at any time.',
+     de:'Ich verstehe, dass dies ein Betatest von BreezyBuddy ist. Mein Feedback wird zur Verbesserung der App genutzt. Ich stimme der freiwilligen Teilnahme zu und kann jederzeit aufhören.'},
+  opts:[{en:'I agree and want to participate', de:'Ich stimme zu und möchte teilnehmen'},
+        {en:'I do not agree',                  de:'Ich stimme nicht zu'}]},
 
-{ id:2, type:'radio', hasOther:true,
-  q:{en:'What best describes you right now?',
-     ta:'இப்போது உங்களை எது சிறப்பாக விவரிக்கிறது?',
-     tg:'இப்போது உங்களை எப்படி describe பண்ணலாம்?'},
-  opts:[{en:'School student',       ta:'பள்ளி மாணவர்',             tg:'School student'},
-        {en:'College student',      ta:'கல்லூரி மாணவர்',           tg:'College student'},
-        {en:'Working professional', ta:'வேலை செய்பவர்',            tg:'Working professional'},
-        {en:'Business owner',       ta:'தொழிலதிபர்',               tg:'Business owner'},
-        {en:'Homemaker',            ta:'இல்லத்தரசி / இல்லத்தரசர்', tg:'Homemaker'},
-        ],
-  hasOther:true},
+/* ══ SECTION 2: ABOUT YOU ══ */
+{ id:2, type:'text',
+  sec:{en:'About You', de:'Über dich'},
+  q:{en:'What is your name?',
+     de:'Wie heißt du?'},
+  sub:{en:'So we can reach you during the test phase.',
+       de:'Damit wir dich während der Testphase erreichen können.'}},
 
-{ id:3, type:'radio', hasOther:true,
-  q:{en:'Where do you currently live?',
-     ta:'நீங்கள் தற்போது எங்கே வசிக்கிறீர்கள்?',
-     tg:'நீங்கள் இப்போ எங்க இருக்கீங்க?'},
-  opts:[{en:'City (Chennai, Coimbatore, Madurai…)', ta:'நகரம் (சென்னை, கோயம்புத்தூர், மதுரை…)',  tg:'City (Chennai, Coimbatore, Madurai…)'},
-        {en:'Town / semi-urban',                    ta:'சிறு நகரம் / அரை நகர்ப்புறம்',             tg:'Town / semi-urban'},
-        {en:'Village / rural',                      ta:'கிராமம் / கிராமப்புறம்',                     tg:'கிராமம் / rural area'}],
-  hasOther:true},
+{ id:3, type:'text',
+  q:{en:'What is your email address?',
+     de:'Wie lautet deine E-Mail-Adresse?'},
+  sub:{en:'We will only use it for beta test communication.',
+       de:'Wird nur für die Beta-Test-Kommunikation genutzt.'}},
 
+/* ══ SECTION 3: DEVICE & SETUP ══ */
 { id:4, type:'radio',
-  q:{en:'What is your highest level of education?',
-     ta:'உங்கள் உயர்ந்த கல்வி தகுதி என்ன?',
-     tg:'உங்கள் highest education என்ன?'},
-  opts:[{en:'Up to 10th grade',       ta:'10-ம் வகுப்பு வரை',        tg:'10th grade வரை'},
-        {en:'12th / Higher Secondary', ta:'12-ம் வகுப்பு / மேல்நிலை', tg:'12th / Higher Secondary'},
-        {en:'Diploma / ITI',           ta:'டிப்ளமோ / ஐ.டி.ஐ.',        tg:'Diploma / ITI'},
-        {en:"Bachelor's degree",       ta:'இளங்கலை பட்டம்',            tg:"Bachelor's degree"},
-        {en:'Postgraduate or higher',  ta:'முதுகலை / உயர் கல்வி',      tg:'Postgraduate or higher'}]},
+  sec:{en:'Your Device', de:'Dein Gerät'},
+  q:{en:'Which smartphone do you use?',
+     de:'Welches Smartphone nutzt du?'},
+  opts:[{en:'Android',       de:'Android'},
+        {en:'iPhone (iOS)',   de:'iPhone (iOS)'},
+        {en:'I use both',    de:'Ich nutze beides'}]},
 
 { id:5, type:'radio',
-  q:{en:'Which language are you most comfortable reading in?',
-     ta:'நீங்கள் எந்த மொழியில் படிக்க மிகவும் வசதியாக உணர்கிறீர்கள்?',
-     tg:'நீங்கள் எந்த மொழியில் படிக்க comfortable-ஆ இருக்கீங்க?'},
-  opts:[{en:'Tamil only',               ta:'தமிழ் மட்டும்',                    tg:'தமிழ் மட்டும்'},
-        {en:'English only',             ta:'ஆங்கிலம் மட்டும்',                 tg:'English மட்டும்'},
-        {en:'Both Tamil and English',   ta:'தமிழ் மற்றும் ஆங்கிலம் இரண்டும்',  tg:'தமிழ் and English இரண்டும்'},
-        {en:'Tanglish (mixed)',         ta:'தங்கிலீஷ் (கலந்து)',               tg:'Tanglish (mix பண்ணி)'}]},
+  q:{en:'Which Android version does your phone run? (Settings → About Phone)',
+     de:'Welche Android-Version hat dein Handy? (Einstellungen → Über das Telefon)'},
+  sub:{en:'Skip if you use iPhone only.',
+       de:'Überspringe diese Frage, wenn du nur ein iPhone nutzt.'},
+  opts:[{en:'Android 10 or older',  de:'Android 10 oder älter'},
+        {en:'Android 11',           de:'Android 11'},
+        {en:'Android 12',           de:'Android 12'},
+        {en:'Android 13',           de:'Android 13'},
+        {en:'Android 14 or newer',  de:'Android 14 oder neuer'},
+        {en:'I don\'t know',        de:'Weiß ich nicht'},
+        {en:'I use iPhone only',    de:'Ich nutze nur ein iPhone'}]},
 
-/* ══ SECTION 2 ══ */
-{ id:6, type:'radio', hasOther:true,
-  sec:{en:'Tech Comfort', ta:'தொழில்நுட்ப வசதி', tg:'Tech Comfort'},
-  sketch:'sketch-s2',
-  q:{en:'What device do you use most often to go online?',
-     ta:'இணையத்தில் இணைய நீங்கள் அதிகமாக எந்த சாதனத்தை பயன்படுத்துகிறீர்கள்?',
-     tg:'Online போக நீங்கள் mostly எந்த device use பண்றீங்க?'},
-  opts:[{en:'Smartphone',              ta:'ஸ்மார்ட்போன்',              tg:'Smartphone'},
-        {en:'Shared family phone',     ta:'பகிர்ந்த குடும்ப தொலைபேசி', tg:'Family-ஓட shared phone'},
-        {en:'Laptop / computer',       ta:'மடிக்கணினி / கணினி',        tg:'Laptop / computer'},
-        {en:'No device of my own',     ta:'என்னுடையது இல்லை',          tg:'என்னுடைய device இல்லை'}]},
+/* ══ SECTION 4: NOTIFICATION PREFERENCES ══ */
+{ id:6, type:'radio',
+  sec:{en:'Notification Preferences', de:'Benachrichtigungs-Einstellungen'},
+  q:{en:'In which language would you like to receive notifications?',
+     de:'In welcher Sprache möchtest du Benachrichtigungen erhalten?'},
+  opts:[{en:'English',              de:'Englisch'},
+        {en:'German (Deutsch)',     de:'Deutsch'},
+        {en:'Tamil (தமிழ்)',       de:'Tamil (தமிழ்)'},
+        {en:'Tanglish (Tamil + English mix)', de:'Tanglish (Tamil + English Mix)'}]},
 
-{ id:7, type:'scale',
-  q:{en:'How comfortable are you using a smartphone for daily tasks?',
-     ta:'அன்றாட பணிகளுக்கு ஸ்மார்ட்போன் பயன்படுத்துவதில் எவ்வளவு வசதியாக இருக்கிறீர்கள்?',
-     tg:'Daily tasks-க்கு smartphone use பண்றது எவ்வளவு comfortable?'},
-  low:{en:'Not at all', ta:'வசதியில்லை',     tg:'Comfortable இல்லை'},
-  high:{en:'Very comfortable', ta:'மிகவும் வசதியாக', tg:'மிகவும் comfortable'}},
+{ id:7, type:'radio',
+  q:{en:'How often would you like to receive study notifications?',
+     de:'Wie oft möchtest du Lern-Benachrichtigungen erhalten?'},
+  opts:[{en:'Every 30 minutes',   de:'Alle 30 Minuten'},
+        {en:'Every hour',         de:'Jede Stunde'},
+        {en:'Every 2 hours',      de:'Alle 2 Stunden'},
+        {en:'3-5 times per day',  de:'3-5 Mal pro Tag'},
+        {en:'I want to decide myself', de:'Möchte ich selbst entscheiden'}]},
 
-{ id:8, type:'check', hasOther:true,
-  q:{en:'Which apps do you use regularly?',
-     ta:'நீங்கள் தொடர்ந்து பயன்படுத்தும் ஆப்ஸ் எவை?',
-     tg:'நீங்கள் regularly use பண்ற apps எவை?'},
-  opts:[{en:'WhatsApp',               ta:'WhatsApp',               tg:'WhatsApp'},
-        {en:'YouTube',                ta:'YouTube',                tg:'YouTube'},
-        {en:'Instagram / Facebook',   ta:'Instagram / Facebook',   tg:'Instagram / Facebook'},
-        {en:'Google Search',          ta:'Google Search',          tg:'Google Search'},
-        {en:'Online shopping apps',   ta:'ஆன்லைன் ஷாப்பிங் ஆப்ஸ்', tg:'Online shopping apps'},
-        {en:'Banking / UPI apps',     ta:'வங்கி / UPI ஆப்ஸ்',      tg:'Banking / UPI apps'}]},
+{ id:8, type:'radio',
+  q:{en:'What personality style do you prefer for notifications?',
+     de:'Welchen Benachrichtigungsstil bevorzugst du?'},
+  opts:[{en:'Sarcastic & witty',           de:'Sarkastisch & witzig'},
+        {en:'Friendly & encouraging',      de:'Freundlich & ermutigend'},
+        {en:'Strict teacher / coach',      de:'Strenger Lehrer / Coach'},
+        {en:'Motivational & inspiring',    de:'Motivierend & inspirierend'},
+        {en:'Mix of everything (surprise me!)', de:'Mix aus allem (überrasch mich!)'}]},
 
+/* ══ SECTION 5: TECHNICAL ══ */
 { id:9, type:'radio',
-  q:{en:'How reliable is your internet connection at home?',
-     ta:'வீட்டில் உங்கள் இணைய இணைப்பு எவ்வளவு நம்பகமானது?',
-     tg:'வீட்ல உங்கள் internet connection எவ்வளவு reliable-ஆ இருக்கு?'},
-  opts:[{en:'Always fast and stable',      ta:'எப்போதும் வேகமாகவும் நிலையானதாகவும்', tg:'எப்பவும் fast and stable'},
-        {en:'Mostly fine, sometimes slow', ta:'பெரும்பாலும் சரி, சில நேரம் மெதுவாக',  tg:'பெரும்பாலும் fine, சில நேரம் slow'},
-        {en:'Often slow or disconnects',   ta:'அடிக்கடி மெதுவாக அல்லது துண்டிக்கும்', tg:'அடிக்கடி slow ஆகும், disconnect ஆகும்'},
-        {en:'No internet at home',         ta:'வீட்டில் இணையம் இல்லை',                tg:'வீட்ல internet இல்லை'}]},
+  sec:{en:'Technical Setup', de:'Technisches Setup'},
+  q:{en:'Do you know what an API key is? (e.g., from OpenAI, Google Gemini, Groq)',
+     de:'Weißt du, was ein API-Schlüssel ist? (z.B. von OpenAI, Google Gemini, Groq)'},
+  opts:[{en:'Yes, I already have one',                de:'Ja, ich habe bereits einen'},
+        {en:'Yes, but I don\'t have one yet',          de:'Ja, aber ich habe noch keinen'},
+        {en:'I\'ve heard of it but don\'t know how it works', de:'Davon gehört, aber weiß nicht wie es funktioniert'},
+        {en:'No, I have no idea what that is',         de:'Nein, davon habe ich keine Ahnung'}]},
 
-/* ══ SECTION 3 ══ */
 { id:10, type:'radio',
-  sec:{en:'AI Awareness', ta:'AI விழிப்புணர்வு', tg:'AI Awareness'},
-  sketch:'sketch-s3',
-  q:{en:'Where did you first hear about AI tools like ChatGPT?',
-     ta:'ChatGPT போன்ற AI கருவிகளைப் பற்றி முதலில் எங்கே கேட்டீர்கள்?',
-     tg:'ChatGPT மாதிரி AI tools பத்தி முதல்ல எங்க கேட்டீங்க?'},
-  opts:[{en:'YouTube / social media', ta:'YouTube / சமூக வலைத்தளம்',        tg:'YouTube / social media'},
-        {en:'Friends or family',      ta:'நண்பர்கள் அல்லது குடும்பம்',      tg:'நண்பர்கள் or family'},
-        {en:'School / college',       ta:'பள்ளி / கல்லூரி',                  tg:'School / college'},
-        {en:'News or articles',       ta:'செய்தி அல்லது கட்டுரைகள்',         tg:'News or articles'},
-        {en:"Haven't heard of it",    ta:'கேட்டதில்லை',                      tg:'நான் கேட்டதே இல்லை'}],
-  hasOther:true},
+  q:{en:'Would you be willing to create a free API key (e.g., from Groq — takes 30 seconds) for better AI-generated notifications?',
+     de:'Wärst du bereit, einen kostenlosen API-Schlüssel zu erstellen (z.B. bei Groq — dauert 30 Sekunden) für bessere KI-generierte Benachrichtigungen?'},
+  opts:[{en:'Yes, happy to',                        de:'Ja, gerne'},
+        {en:'Yes, if someone guides me through it', de:'Ja, wenn mir jemand dabei hilft'},
+        {en:'No, I prefer the app without that',    de:'Nein, ich nutze die App lieber ohne'},
+        {en:'Not sure yet',                         de:'Bin mir noch nicht sicher'}]},
 
-{ id:11, type:'check', hasOther:true,
-  q:{en:'Which AI tools have you tried?',
-     ta:'நீங்கள் எந்த AI கருவிகளை முயற்சித்தீர்கள்?',
-     tg:'நீங்கள் எந்த AI tools try பண்ணீங்க?'},
-  opts:[{en:'ChatGPT',                      ta:'ChatGPT',                             tg:'ChatGPT'},
-        {en:'Google Gemini',                 ta:'Google Gemini',                       tg:'Google Gemini'},
-        {en:'Microsoft Copilot',             ta:'Microsoft Copilot',                   tg:'Microsoft Copilot'},
-        {en:'Siri / Google Assistant',       ta:'Siri / Google Assistant',             tg:'Siri / Google Assistant'},
-        {en:'AI image tools (Midjourney…)',  ta:'AI படம் கருவிகள்',                   tg:'AI image tools'},
-        {en:'None — never tried any',        ta:'எதுவும் இல்லை — முயற்சிக்கவில்லை',  tg:'எதுவும் இல்லை — try பண்ணலை'}]},
+/* ══ SECTION 6: STUDY HABITS ══ */
+{ id:11, type:'scale',
+  sec:{en:'Your Phone Habits', de:'Deine Handy-Gewohnheiten'},
+  q:{en:'How many hours per day do you estimate you spend on your phone (non-study)?',
+     de:'Wie viele Stunden pro Tag verbringst du schätzungsweise am Handy (nicht zum Lernen)?'},
+  low:{en:'< 1 hour', de:'< 1 Stunde'},
+  high:{en:'5+ hours', de:'5+ Stunden'}},
 
-{ id:12, type:'radio', hasOther:true,
-  q:{en:'When you tried an AI tool, what happened?',
-     ta:'நீங்கள் ஒரு AI கருவியை முயற்சித்தபோது என்ன நடந்தது?',
-     tg:'AI tool try பண்ணபோ என்ன ஆச்சு?'},
-  opts:[{en:'It was helpful, I kept using it',    ta:'பயனுள்ளதாக இருந்தது, தொடர்கிறேன்',            tg:'Useful-ஆ இருந்துச்சு, தொடர்ந்து use பண்றேன்'},
-        {en:'Tried once but stopped',             ta:'ஒரு முறை முயற்சித்தேன், நிறுத்தினேன்',        tg:'ஒரு தடவை try பண்ணேன், விட்டுட்டேன்'},
-        {en:"Couldn't understand how to use it",  ta:'எப்படி பயன்படுத்துவது என்று புரியவில்லை',    tg:'எப்படி use பண்றதுன்னு புரியலை'},
-        {en:'Everything was English — gave up',   ta:'எல்லாமே ஆங்கிலத்தில் — விட்டுவிட்டேன்',      tg:'எல்லாமே English-ல இருந்துச்சு — விட்டுட்டேன்'},
-        {en:"Haven't tried any AI tool",          ta:'எந்த AI கருவியும் முயற்சிக்கவில்லை',         tg:'எந்த AI tool-உம் try பண்ணலை'}]},
+{ id:12, type:'check', hasOther:true,
+  q:{en:'What are you currently studying or interested in learning? (Select all that apply)',
+     de:'Was studierst du oder möchtest du lernen? (Mehrfachauswahl möglich)'},
+  opts:[{en:'University coursework',     de:'Universitäts-Studieninhalt'},
+        {en:'Competitive exam prep',     de:'Prüfungsvorbereitung'},
+        {en:'Programming / Tech',        de:'Programmierung / Technik'},
+        {en:'Languages',                 de:'Sprachen'},
+        {en:'Books / Literature',        de:'Bücher / Literatur'},
+        {en:'Personal development',      de:'Persönliche Entwicklung'}]},
 
+/* ══ SECTION 7: FEEDBACK CHANNEL ══ */
 { id:13, type:'radio', hasOther:true,
-  q:{en:'What was your first reaction when you heard about AI?',
-     ta:'AI பற்றி கேட்டபோது உங்கள் முதல் எதிர்வினை என்ன?',
-     tg:'AI பத்தி கேட்டவுடனே உங்களுக்கு என்ன feel ஆச்சு?'},
-  opts:[{en:'Excited — wanted to try immediately', ta:'உற்சாகமாக இருந்தது — உடனே முயற்சிக்க வேண்டும்', tg:'Excited-ஆ இருந்துச்சு — உடனே try பண்ணணும்னு தோணுச்சு'},
-        {en:'Curious but unsure how to start',    ta:'ஆர்வமாக இருந்தது, எங்கிருந்து தொடங்குவது தெரியவில்லை', tg:'Curious-ஆ இருந்துச்சு, ஆனா எங்க start பண்றதுன்னு தெரியலை'},
-        {en:'Scared — worried about job loss',    ta:'பயமாக இருந்தது — வேலைகளை பறிக்கும் என்று கவலைப்பட்டேன்', tg:'பயமா இருந்துச்சு — jobs போய்டும்னு worry ஆச்சு'},
-        {en:"Confused — didn't understand",       ta:'குழப்பமாக இருந்தது — என்னவென்று புரியவில்லை',  tg:'Confused ஆச்சு — என்ன இதுன்னு புரியலை'},
-        {en:"Didn't care much",                   ta:'அதிகம் அக்கறை இல்லை',                          tg:'Periya concern இல்லை'}],
-  hasOther:true},
+  sec:{en:'Feedback & Communication', de:'Feedback & Kommunikation'},
+  q:{en:'How would you prefer to give feedback during the test?',
+     de:'Wie möchtest du während des Tests Feedback geben?'},
+  opts:[{en:'WhatsApp messages',          de:'WhatsApp-Nachrichten'},
+        {en:'Email',                      de:'E-Mail'},
+        {en:'Telegram',                   de:'Telegram'},
+        {en:'A feedback form in the app', de:'Ein Feedback-Formular in der App'}]},
 
-/* ── ATTENTION CHECK (between Q13 and Q14) ── */
-{ id:'ac', type:'radio', trap:'attention', correctIdx:1,
-  q:{en:'To make sure you\'re reading carefully — which of these is a video platform?',
-     ta:'நீங்கள் கவனமாக படிக்கிறீர்கள் என்பதை உறுதிப்படுத்த — இவற்றில் எது ஒரு வீடியோ தளம்?',
-     tg:'நீங்கள் கவனமாக படிக்கீங்களன்னு check பண்ண — இதுல எது ஒரு video platform?'},
-  sub:{en:'Select the correct answer to continue.',
-       ta:'தொடர சரியான பதிலை தேர்வு செய்யவும்.',
-       tg:'Correct answer select பண்ணிட்டு continue பண்ணுங்க.'},
-  opts:[{en:'Microsoft Excel', ta:'Microsoft Excel', tg:'Microsoft Excel'},
-        {en:'YouTube',          ta:'YouTube',          tg:'YouTube'},
-        {en:'Google Maps',      ta:'Google Maps',      tg:'Google Maps'},
-        {en:'WhatsApp',         ta:'WhatsApp',         tg:'WhatsApp'}]},
+{ id:14, type:'radio',
+  q:{en:'How often are you willing to give feedback?',
+     de:'Wie oft bist du bereit, Feedback zu geben?'},
+  opts:[{en:'After every notification (detailed tester)', de:'Nach jeder Benachrichtigung (detaillierter Tester)'},
+        {en:'Once a day (quick summary)',                 de:'Einmal am Tag (kurze Zusammenfassung)'},
+        {en:'Once a week',                                de:'Einmal pro Woche'},
+        {en:'Only if something is broken or annoying',    de:'Nur wenn etwas kaputt oder störend ist'}]},
 
-/* ══ SECTION 4 ══ */
-{ id:14, type:'check',
-  sec:{en:'Where AI Can Help', ta:'AI உதவக்கூடிய இடங்கள்', tg:'AI எங்க உதவலாம்'},
-  sketch:'sketch-s4',
-  q:{en:'Which areas of your life would you most want AI help in?',
-     ta:'உங்கள் வாழ்க்கையின் எந்த பகுதிகளில் AI உதவி வேண்டும்?',
-     tg:'உங்கள் life-ல எங்க AI help வேணும்?'},
-  opts:[{en:'Study / homework',              ta:'படிப்பு / வீட்டுப்பாடம்',             tg:'படிப்பு / homework'},
-        {en:'Job search & resume',           ta:'வேலை தேடல் & விண்ணப்பம்',            tg:'Job search & resume'},
-        {en:'Starting a business',           ta:'தொழில் தொடங்குதல்',                   tg:'Business start பண்றது'},
-        {en:'Health information',            ta:'உடல்நல தகவல்',                        tg:'Health information'},
-        {en:'Daily planning',                ta:'அன்றாட திட்டமிடல்',                   tg:'Daily planning'},
-        {en:'Creative work (writing/design)',ta:'படைப்பு பணி (எழுத்து/வடிவமைப்பு)',   tg:'Creative work (writing/design)'},
-        {en:'Government schemes & forms',    ta:'அரசு திட்டங்கள் & படிவங்கள்',        tg:'Government schemes & forms'}]},
+{ id:15, type:'text', optional:true,
+  q:{en:'Your WhatsApp number (optional — only if you chose WhatsApp for feedback)',
+     de:'Deine WhatsApp-Nummer (optional — nur wenn du WhatsApp für Feedback gewählt hast)'}},
 
-{ id:15, type:'scale',
-  q:{en:'How important is it for AI tools to be available in Tamil?',
-     ta:'AI கருவிகள் தமிழில் கிடைப்பது எவ்வளவு முக்கியம்?',
-     tg:'AI tools Tamil-ல இருக்கணும்னு எவ்வளவு important?'},
-  low:{en:'Not important', ta:'முக்கியமில்லை', tg:'Important இல்லை'},
-  high:{en:'Very important', ta:'மிகவும் முக்கியம்', tg:'மிகவும் important'}},
+/* ══ SECTION 8: EXPECTATIONS ══ */
+{ id:16, type:'text', optional:true,
+  sec:{en:'Your Expectations', de:'Deine Erwartungen'},
+  q:{en:'What would make you uninstall BreezyBuddy? What would annoy you about a notification app?',
+     de:'Was würde dich dazu bringen, BreezyBuddy zu deinstallieren? Was würde dich an einer Benachrichtigungs-App stören?'},
+  sub:{en:'Be honest — this helps us the most!',
+       de:'Sei ehrlich — das hilft uns am meisten!'}},
 
-{ id:16, type:'scale',
-  q:{en:'Do you believe AI tools can genuinely help people like you build a better career?',
-     ta:'AI கருவிகள் உங்களைப் போன்ற மக்களுக்கு சிறந்த தொழில் உருவாக்க உண்மையிலேயே உதவும் என்று நம்புகிறீர்களா?',
-     tg:'AI tools உங்களை மாதிரி ஆட்களுக்கு better career build பண்ண உதவும்னு நம்பீங்களா?'},
-  low:{en:'Not at all', ta:'ஒருவேளை இல்லை', tg:'இல்லவே இல்லை'},
-  high:{en:'Absolutely', ta:'முற்றிலும் ஆம்', tg:'Absolutely'}},
+{ id:17, type:'text', optional:true,
+  q:{en:'Any other thoughts, ideas, or concerns?',
+     de:'Weitere Gedanken, Ideen oder Bedenken?'}},
 
-{ id:17, type:'radio',
-  q:{en:'How often would you use AI tools if they were in Tamil?',
-     ta:'AI கருவிகள் தமிழில் கிடைத்தால் நீங்கள் எவ்வளவு அடிக்கடி பயன்படுத்துவீர்கள்?',
-     tg:'AI tools Tamil-ல இருந்தா நீங்க எவ்வளவு often use பண்ணுவீங்க?'},
-  opts:[{en:'Every day',            ta:'ஒவ்வொரு நாளும்',   tg:'Everyday'},
-        {en:'A few times a week',   ta:'வாரத்தில் சில முறை', tg:'Week-ல சில தடவை'},
-        {en:'Once in a while',      ta:'அவ்வப்போது',         tg:'சில நேரம்'},
-        {en:'Rarely',               ta:'அரிதாக',              tg:'Rare-ஆ'},
-        {en:'Probably never',       ta:'ஒருவேளை ஒருபோதும் இல்லை', tg:'இல்லாம போகலாம்'}],
-  hasOther:true},
+/* ── DECLINED (consent not given) ── */
+{ id:'declined', type:'declined' },
 
-{ id:18, type:'check',
-  q:{en:'What specific tasks would you use AI for?',
-     ta:'குறிப்பிட்ட என்ன பணிகளுக்கு AI பயன்படுத்துவீர்கள்?',
-     tg:'குறிப்பா எந்த tasks-க்கு AI use பண்ணுவீங்க?'},
-  opts:[{en:'Writing emails or letters',     ta:'மின்னஞ்சல் அல்லது கடிதங்கள் எழுதுதல்', tg:'Emails or letters எழுதுறது'},
-        {en:'Translating Tamil to English',  ta:'தமிழை ஆங்கிலத்தில் மொழிபெயர்த்தல்',    tg:'Tamil-ஐ English-க்கு translate பண்றது'},
-        {en:'Getting answers to questions',  ta:'கேள்விகளுக்கு பதில் பெறுதல்',            tg:'Questions-க்கு answers கேக்கறது'},
-        {en:'Creating images or videos',     ta:'படங்கள் அல்லது வீடியோக்கள் உருவாக்குதல்',tg:'Images or videos create பண்றது'},
-        {en:'Summarising long documents',    ta:'நீண்ட ஆவணங்களை சுருக்குதல்',             tg:'Long documents-ஐ summarise பண்றது'},
-        {en:'None of the above',             ta:'மேலே எதுவும் இல்லை',                      tg:'எதுவும் இல்லை'}]},
-
-/* ══ SECTION 5 ══ */
-{ id:19, type:'check',
-  sec:{en:"What's Stopping You?", ta:'உங்களை என்ன தடுக்கிறது?', tg:'உங்களை எது தடுக்குது?'},
-  sketch:'sketch-s5',
-  q:{en:'What are the biggest barriers stopping you from using AI tools?',
-     ta:'AI கருவிகளை பயன்படுத்துவதை தடுக்கும் மிகப்பெரிய தடைகள் என்ன?',
-     tg:'AI tools use பண்றதை தடுக்கற biggest barriers என்ன?'},
-  opts:[{en:"Everything is in English — can't understand", ta:'எல்லாமே ஆங்கிலத்தில் — புரியவில்லை',           tg:'எல்லாமே English-ல இருக்கு — புரியலை'},
-        {en:"Don't know where to start",                  ta:'எங்கிருந்து தொடங்குவது தெரியவில்லை',           tg:'எங்க start பண்றதுன்னு தெரியலை'},
-        {en:"Scared I'll do something wrong",             ta:'தவறு செய்துவிடுவேன் என்று பயம்',               tg:'தப்பு பண்ணிடுவேன்னு பயம்'},
-        {en:'My internet is too slow',                    ta:'என் இணையம் மிகவும் மெதுவாக உள்ளது',           tg:'என் internet romba slow'},
-        {en:"Don't have a computer or good phone",        ta:'கணினி அல்லது நல்ல தொலைபேசி இல்லை',            tg:'Computer or நல்ல phone இல்லை'},
-        {en:"Don't trust AI — feels unsafe",              ta:'AI-ஐ நம்பவில்லை — பாதுகாப்பற்றதாக தோன்றுகிறது',tg:'AI-ஐ நம்பலை — unsafe-ஆ feel ஆகுது'},
-        {en:'No one around me uses it',                   ta:'என் சுற்றத்தில் யாரும் பயன்படுத்தவில்லை',     tg:'என் கிட்ட யாரும் use பண்றதில்லை'}]},
-
-{ id:20, type:'scale',
-  q:{en:'How much does the language barrier (English only) stop you from using AI?',
-     ta:'மொழித் தடை (ஆங்கிலம் மட்டும்) AI பயன்படுத்துவதை எவ்வளவு தடுக்கிறது?',
-     tg:'Language barrier (எல்லாமே English) உங்களை AI use பண்ண எவ்வளவு தடுக்குது?'},
-  low:{en:"Doesn't stop me", ta:'தடுக்கவில்லை', tg:'தடுக்கலை'},
-  high:{en:'Completely stops me', ta:'முற்றிலும் தடுக்கிறது', tg:'Completely தடுக்குது'}},
-
-{ id:21, type:'scale', trap:'reverse',
-  q:{en:'AI tools are completely useless for someone like me.',
-     ta:'என்னைப் போன்ற ஒருவருக்கு AI கருவிகள் முற்றிலும் பயனற்றவை.',
-     tg:'என்னை மாதிரி ஒருத்தருக்கு AI tools completely useless.'},
-  sub:{en:'Rate your agreement with this statement.',
-       ta:'இந்த கூற்றுடன் உங்கள் ஒப்புதலை மதிப்பிடுங்கள்.',
-       tg:'இந்த statement-க்கு எவ்வளவு agree பண்றீங்க?'},
-  low:{en:'Strongly disagree', ta:'கடுமையாக எதிர்க்கிறேன்', tg:'Strongly disagree'},
-  high:{en:'Strongly agree', ta:'கடுமையாக ஒப்புக்கொள்கிறேன்', tg:'Strongly agree'}},
-
-{ id:22, type:'scale',
-  q:{en:'Do you feel embarrassed when asking basic questions to an AI?',
-     ta:'AI-ஐ அடிப்படை கேள்விகள் கேட்கும்போது நீங்கள் தயக்கமாக உணர்கிறீர்களா?',
-     tg:'AI-கிட்ட basic questions கேக்கும்போது embarrassed-ஆ feel ஆகுதா?'},
-  low:{en:'Not at all', ta:'இல்லை', tg:'இல்லவே இல்லை'},
-  high:{en:'Very much', ta:'மிகவும்', tg:'மிகவும்'}},
-
-{ id:23, type:'scale',
-  q:{en:'If a free Tamil-language AI tutorial video existed, how likely would you watch it?',
-     ta:'இலவச தமிழ் AI பயிற்சி வீடியோ இருந்தால், நீங்கள் அதை பார்க்க எவ்வளவு வாய்ப்பு?',
-     tg:'Free-யா Tamil-ல AI tutorial video இருந்தா, நீங்க watch பண்ண எவ்வளவு chance?'},
-  low:{en:'Very unlikely', ta:'மிகவும் சாத்தியமில்லை', tg:'மிகவும் unlikely'},
-  high:{en:'Definitely yes', ta:'நிச்சயமாக ஆம்', tg:'Definitely yes'}},
-
-{ id:24, type:'check',
-  q:{en:'What would make you trust and use an AI tool?',
-     ta:'என்ன இருந்தால் நீங்கள் AI கருவியை நம்பி பயன்படுத்துவீர்கள்?',
-     tg:'என்ன இருந்தா AI tool-ஐ நம்பி use பண்ணுவீங்க?'},
-  opts:[{en:'If it works in Tamil',                 ta:'தமிழில் செயல்பட்டால்',               tg:'Tamil-ல work பண்ணா'},
-        {en:'If a trusted person recommends it',    ta:'நம்பகமான ஒருவர் பரிந்துரைத்தால்',    tg:'Trusted person recommend பண்ணா'},
-        {en:'If my school or college teaches it',   ta:'பள்ளி அல்லது கல்லூரி கற்பித்தால்',   tg:'School or college கத்துக்கொடுத்தா'},
-        {en:"If it's free",                         ta:'இலவசமாக இருந்தால்',                  tg:"Free-யா இருந்தா"},
-        {en:'If I see others using it successfully',ta:'மற்றவர்கள் வெற்றிகரமாக பயன்படுத்துவதை பார்த்தால்',tg:'மத்தவங்க successfully use பண்றதை பார்த்தா'}],
-  hasOther:true},
-
-/* ══ SECTION 6 ══ */
-{ id:25, type:'scale',
-  sec:{en:'Your AI Experience', ta:'உங்கள் AI அனுபவம்', tg:'உங்கள் AI experience'},
-  sketch:'sketch-s6',
-  q:{en:'How comfortable are you using AI tools right now?',
-     ta:'இப்போது AI கருவிகளை பயன்படுத்துவதில் எவ்வளவு வசதியாக இருக்கிறீர்கள்?',
-     tg:'இப்போ AI tools use பண்றது எவ்வளவு comfortable?'},
-  low:{en:'Total beginner', ta:'முழு தொடக்கக்காரர்', tg:'Total beginner'},
-  high:{en:'Very confident', ta:'மிகவும் நம்பிக்கையாக', tg:'மிகவும் confident'}},
-
-{ id:26, type:'radio', hasOther:true,
-  q:{en:'Have you ever tried learning something online (YouTube, apps, websites)?',
-     ta:'நீங்கள் ஒருபோதாவது ஆன்லைனில் ஏதாவது கற்றுக்கொள்ள முயற்சித்தீர்களா?',
-     tg:'Online-ல ஏதாவது learn பண்ண try பண்ணீங்களா?'},
-  opts:[{en:'Yes, I do it regularly',        ta:'ஆம், தொடர்ந்து செய்கிறேன்',             tg:'ஆமா, regularly பண்றேன்'},
-        {en:'Yes, tried a few times',        ta:'ஆம், சில முறை முயற்சித்தேன்',           tg:'ஆமா, சில தடவை try பண்ணேன்'},
-        {en:"Started but couldn't continue", ta:'தொடங்கினேன், ஆனால் தொடர முடியவில்லை',  tg:'Start பண்ணேன், ஆனா தொடர முடியலை'},
-        {en:'No, never tried',               ta:'இல்லை, ஒருபோதும் முயற்சிக்கவில்லை',   tg:'இல்லை, try பண்ணலை'}],
-  hasOther:true},
-
-{ id:27, type:'check',
-  q:{en:'If you started and stopped online learning, why did you stop?',
-     ta:'நீங்கள் ஆன்லைன் கற்றலை தொடங்கி நிறுத்தியிருந்தால், ஏன் நிறுத்தினீர்கள்?',
-     tg:'Online learning start பண்ணி stop பண்ணீங்களா? ஏன்?'},
-  opts:[{en:'Content was in English only',  ta:'உள்ளடக்கம் ஆங்கிலத்தில் மட்டும்',        tg:'Content English-ல மட்டும் இருந்துச்சு'},
-        {en:'Too complicated / technical',  ta:'மிகவும் சிக்கலாக / தொழில்நுட்பமாக',       tg:'Romba complicated / technical-ஆ இருந்துச்சு'},
-        {en:'Got bored',                    ta:'சலிப்பாக போனது',                          tg:'Boring-ஆ போச்சு'},
-        {en:'No time',                      ta:'நேரமில்லை',                               tg:'Time இல்லை'},
-        {en:'Internet issues',              ta:'இணைய பிரச்சனைகள்',                        tg:'Internet problem'},
-        {en:"Doesn't apply — I never stopped",ta:'இது பொருந்தாது — நிறுத்தவில்லை',      tg:'இது apply ஆகலை — நான் stop பண்ணலை'}]},
-
-{ id:28, type:'check',
-  q:{en:'Which topics should Tamil AI tutorial videos cover first? (Pick up to 3)',
-     ta:'தமிழ் AI பயிற்சி வீடியோக்கள் முதலில் எந்த தலைப்புகளை உள்ளடக்க வேண்டும்? (3 வரை தேர்வு செய்யவும்)',
-     tg:'Tamil AI tutorial videos முதல்ல எந்த topics cover பண்ணணும்? (3 வரை select பண்ணுங்க)'},
-  maxSelect:3,
-  opts:[{en:'What is AI and how does it work?',   ta:'AI என்றால் என்ன, எவ்வாறு செயல்படுகிறது?', tg:'AI என்ன, எப்படி work பண்றது?'},
-        {en:'How to use ChatGPT in Tamil',         ta:'தமிழில் ChatGPT எப்படி பயன்படுத்துவது',    tg:'Tamil-ல ChatGPT எப்படி use பண்றது'},
-        {en:'AI for job search and resume',        ta:'வேலை பெற / resume எழுத AI',               tg:'Job கிடைக்க / resume எழுத AI'},
-        {en:'AI for students and studying',        ta:'மாணவர்களுக்கும் படிப்பதற்கும் AI',        tg:'Students-க்கும் படிப்புக்கும் AI'},
-        {en:'AI for small business owners',        ta:'சிறு தொழில் அதிபர்களுக்கு AI',            tg:'Small business owners-க்கு AI'},
-        {en:'How to stay safe online with AI',     ta:'AI-உடன் ஆன்லைனில் பாதுகாப்பாக இருப்பது',  tg:'AI-உடன் online-ல safe-ஆ இருக்கறது'}]},
-
-/* ══ SECTION 7 ══ */
-{ id:29, type:'check',
-  sec:{en:'How You Learn Best', ta:'நீங்கள் சிறப்பாக கற்கும் முறை', tg:'நீங்கள் எப்படி learn பண்றீங்க?'},
-  sketch:'sketch-s7',
-  q:{en:'What type of content would make you watch and learn about AI?',
-     ta:'எந்த வகையான உள்ளடக்கம் AI-ஐப் பற்றி பார்க்கவும் கற்கவும் வைக்கும்?',
-     tg:'எந்த மாதிரி content இருந்தா AI பத்தி watch பண்ணி learn பண்ணுவீங்க?'},
-  opts:[{en:'Short videos under 5 minutes',        ta:'5 நிமிடத்திற்கும் குறைவான குறுகிய வீடியோக்கள்', tg:'5 minutes-க்கும் கம்மியான short videos'},
-        {en:'Step-by-step tutorials in Tamil',      ta:'தமிழில் படிப்படியான பயிற்சிகள்',              tg:'தமிழில் step-by-step tutorials'},
-        {en:'Real stories from Tamil students',     ta:'தமிழ் மாணவர்களின் உண்மையான கதைகள்',           tg:'Tamil students-ஓட real stories'},
-        {en:'Live Q&A sessions I can join',         ta:'கலந்துகொள்ளக்கூடிய நேரடி Q&A அமர்வுகள்',    tg:'நான் join பண்ண முடியற live Q&A sessions'},
-        {en:'PDF or written guides in Tamil',       ta:'தமிழில் PDF அல்லது எழுத்து வழிகாட்டிகள்',    tg:'தமிழில் PDF or written guides'},
-        {en:'In-person workshops near me',          ta:'என் அருகில் நடைமுறை பட்டறைகள்',              tg:'என் கிட்ட in-person workshops'}],
-  hasOther:true},
-
-{ id:30, type:'check',
-  q:{en:'What makes you watch a video AND share it with others?',
-     ta:'ஒரு வீடியோவை பார்க்கவும் மற்றவர்களிடம் பகிரவும் என்ன வைக்கிறது?',
-     tg:'ஒரு video பார்க்கவும் மத்தவங்ககிட்ட share பண்ணவும் என்ன வைக்குது?'},
-  opts:[{en:"It's in Tamil and easy to understand", ta:'தமிழில் உள்ளது மற்றும் புரிந்துகொள்ள எளிதாக', tg:'Tamil-ல இருக்கு, easily புரியுது'},
-        {en:'It solves a real problem I have',     ta:'என்னிடம் உள்ள ஒரு உண்மையான சிக்கலை தீர்க்கிறது', tg:'என்னோட real problem-ஐ solve பண்றது'},
-        {en:"It's funny or entertaining",          ta:'நகைச்சுவையாக அல்லது பொழுதுபோக்காக உள்ளது',    tg:'Funny or entertaining-ஆ இருக்கு'},
-        {en:"It's short and doesn't waste my time",ta:'குறுகியதாக உள்ளது, நேரத்தை வீணடிக்கவில்லை',  tg:'Short-ஆ இருக்கு, time waste பண்றதில்லை'},
-        {en:'A person I trust recommends it',      ta:'நான் நம்பும் ஒருவர் பரிந்துரைக்கிறார்',         tg:'நான் நம்புற ஒருத்தர் recommend பண்றாங்க'},
-        {en:'It shows real results / success',     ta:'உண்மையான முடிவுகள் / வெற்றிக் கதைகளை காட்டுகிறது',tg:'Real results / success காட்டுது'}],
-  hasOther:true},
-
-/* ══ SECTION 8 ══ */
-{ id:31, type:'text', optional:true,
-  sec:{en:'Your Voice', ta:'உங்கள் குரல்', tg:'உங்கள் பேச்சு'},
-  sketch:'sketch-s8',
-  q:{en:"In your own words — what would make AI truly useful for someone in your situation?",
-     ta:'உங்கள் சொந்த வார்த்தைகளில் — உங்கள் நிலைமையில் உள்ள ஒருவருக்கு AI உண்மையிலேயே பயனுள்ளதாக மாற என்ன செய்ய வேண்டும்?',
-     tg:'உங்கள் சொந்த வார்த்தைகளில் — உங்கள் situation-ல இருக்கவங்களுக்கு AI really useful ஆகணும்னா என்ன செய்யணும்?'},
-  sub:{en:'Answer in Tamil, Tanglish, or English — whichever feels natural.',
-       ta:'தமிழ், தங்கிலீஷ் அல்லது ஆங்கிலத்தில் பதிலளிக்கவும் — எதுவும் சரி.',
-       tg:'Tamil, Tanglish or English — எதுவும் சரி.'}},
-
-{ id:32, type:'text', optional:true,
-  q:{en:'Is there anything else you\'d like to tell us about AI and your community?',
-     ta:'AI மற்றும் உங்கள் சமூகம் பற்றி வேறு ஏதாவது சொல்ல விரும்புகிறீர்களா?',
-     tg:'AI பத்தியும் உங்கள் community பத்தியும் வேற ஏதாவது சொல்லணும்னு இருக்கா?'},
-  sub:{en:'Completely optional.', ta:'விரும்பினால் மட்டும்.', tg:'Optional.'}},
-
-/* ── THANK YOU ── */
+/* ── DONE ── */
 { id:'done', type:'done' },
 ];
 
@@ -700,646 +588,419 @@ let answers    = {};
 let startTime  = Date.now();
 let flags      = [];
 
+/* submit/data-collection state */
+let lastDoc      = null;   // most recently built response document
+let downloadLink = null;   // hidden <a> that downloads lastDoc as JSON
+let lastSubmitOk = false;  // whether the last Appwrite submit succeeded
+let keyBuffer    = '';     // captures the "breezy" admin shortcut on the done screen
+
 /* ══════════════════════════════════════════════════════════════
    RENDER ENGINE
 ══════════════════════════════════════════════════════════════ */
 const stage = document.getElementById('stage');
 
 function sketchImg(cls, size) {
-  const src = `sketches/${cls.replace('sketch-', '')}.png`;
-  return `<div class="sketch-zone ${cls} placeholder" id="${cls}">
-    <img src="${src}" alt="illustration"
-      onload="this.parentElement.classList.remove('placeholder')"
-      onerror="this.style.display='none'">
-  </div>`;
+  return '';
 }
 
 function renderSlide(s, idx) {
-  const isTa = lang === 'ta' || lang === 'tg';
-  const tclass = isTa ? ' ta' : '';
-  const tf = isTa ? ' style="font-family:\'Noto Sans Tamil\',\'Latha\',sans-serif"' : '';
+  const isDe = lang === 'de';
+  const tclass = '';
+  const tf = '';
 
   if (s.type === 'welcome') {
-    const tf = (lang==='ta'||lang==='tg') ? ' style="font-family:\'Noto Sans Tamil\',sans-serif"' : '';
-    const btnText = lang==='en' ? 'Start survey \u2192'
-      : lang==='ta' ? `<span${tf}>\u0ba4\u0bca\u0b9f\u0b99\u0bcd\u0b95\u0bc1\u0b99\u0bcd\u0b95\u0bb3\u0bcd \u2192</span>`
-      : `<span${tf}>Start \u0baa\u0ba3\u0bcd\u0ba3\u0bc1\u0b99\u0bcd\u0b95 \u2192</span>`;
+    const btnText = lang==='en' ? 'Start survey →' : 'Umfrage starten →';
     const purpose = {
-      en: `I am researching how people in Tamil Nadu understand and use AI tools \u2014 and what is stopping them. This survey takes about <strong>12\u201315 minutes</strong>. Your answers are completely anonymous and will only be used for this research.`,
-      ta: `<span${tf}>\u0ba4\u0bae\u0bbf\u0bb4\u0bcd\u0ba8\u0bbe\u0b9f\u0bcd\u0b9f\u0bbf\u0bb2\u0bcd \u0bae\u0b95\u0bcd\u0b95\u0bb3\u0bcd AI \u0b95\u0bb0\u0bc1\u0bb5\u0bbf\u0b95\u0bb3\u0bc8 \u0b8e\u0bb5\u0bcd\u0bb5\u0bbe\u0bb1\u0bc1 \u0baa\u0bc1\u0bb0\u0bbf\u0ba8\u0bcd\u0ba4\u0bc1\u0b95\u0bca\u0bb3\u0bcd\u0b95\u0bbf\u0bb1\u0bbe\u0bb0\u0bcd\u0b95\u0bb3\u0bcd \u0b8e\u0ba9\u0bcd\u0baa\u0ba4\u0bc8 \u0b86\u0bb0\u0bbe\u0baf\u0bcd\u0b95\u0bbf\u0bb1\u0bc7\u0ba9\u0bcd. \u0b87\u0ba8\u0bcd\u0ba4 \u0b86\u0baf\u0bcd\u0bb5\u0bc1 \u0b9a\u0bc1\u0bae\u0bbe\u0bb0\u0bcd <strong>12\u201315 \u0ba8\u0bbf\u0bae\u0bbf\u0b9f\u0b99\u0bcd\u0b95\u0bb3\u0bcd</strong> \u0b86\u0b95\u0bc1\u0bae\u0bcd. \u0b89\u0b99\u0bcd\u0b95\u0bb3\u0bcd \u0baa\u0ba4\u0bbf\u0bb2\u0bcd\u0b95\u0bb3\u0bcd \u0bae\u0bc1\u0bb1\u0bcd\u0bb1\u0bbf\u0bb2\u0bc1\u0bae\u0bcd \u0b85\u0ba8\u0bbe\u0bae\u0ba4\u0bc7\u0baf\u0bae\u0bbe\u0ba9\u0bb5\u0bc8.</span>`,
-      tg: `<span${tf}>Tamil Nadu-\u0bb2\u0bcd \u0bae\u0b95\u0bcd\u0b95\u0bb3\u0bcd AI tools-\u0b90 \u0b8e\u0baa\u0bcd\u0baa\u0b9f\u0bbf \u0baa\u0bc1\u0bb0\u0bbf\u0b9e\u0bcd\u0b9a\u0bc1\u0b95\u0bcd\u0b95\u0bbf\u0bb1\u0bbe\u0b99\u0bcd\u0b95\u0ba9\u0bcd\u0ba9\u0bc1 research \u0baa\u0ba3\u0bcd\u0bb1\u0bc7\u0ba9\u0bcd. \u0b87\u0ba8\u0bcd\u0ba4 survey \u0b9a\u0bc1\u0bae\u0bbe\u0bb0\u0bcd <strong>12\u201315 minutes</strong> \u0b86\u0b95\u0bc1\u0bae\u0bcd. \u0b89\u0b99\u0bcd\u0b95\u0bb3\u0bcd answers completely anonymous.</span>`
-    };
-    const contactLabel = {
-      en:'Questions? Reach me at',
-      ta:`<span${tf}>\u0b95\u0bc7\u0bb3\u0bcd\u0bb5\u0bbf\u0b95\u0bb3\u0bcd? \u0b8e\u0ba9\u0bcd\u0ba9\u0bc8 \u0ba4\u0bca\u0b9f\u0bb0\u0bcd\u0baa\u0bc1 \u0b95\u0bca\u0bb3\u0bcd\u0bb3\u0bb5\u0bc1\u0bae\u0bcd</span>`,
-      tg:`<span${tf}>Questions \u0b87\u0bb0\u0bc1\u0ba8\u0bcd\u0ba4\u0bbe contact \u0baa\u0ba3\u0bcd\u0ba3\u0bc1\u0b99\u0bcd\u0b95</span>`
+      en: `Thank you for joining the <strong>BreezyBuddy beta test!</strong> This short survey (3-4 minutes) helps us set up the app for you. We need to know your device, preferences, and how you'd like to give feedback.`,
+      de: `Danke, dass du am <strong>BreezyBuddy-Betatest</strong> teilnimmst! Diese kurze Umfrage (3-4 Minuten) hilft uns, die App für dich einzurichten. Wir möchten dein Gerät, deine Präferenzen und dein bevorzugtes Feedback-Format kennenlernen.`
     };
     const anonNote = {
-      en:'No names collected \u00b7 Responses stored securely \u00b7 Data used for research only',
-      ta:`<span${tf}>\u0baa\u0bc6\u0baf\u0bb0\u0bcd\u0b95\u0bb3\u0bcd \u0b9a\u0bc7\u0b95\u0bb0\u0bbf\u0b95\u0bcd\u0b95\u0baa\u0bcd\u0baa\u0b9f\u0bc1\u0bb5\u0ba4\u0bbf\u0bb2\u0bcd\u0bb2\u0bc8 \u00b7 \u0baa\u0bbe\u0ba4\u0bc1\u0b95\u0bbe\u0baa\u0bcd\u0baa\u0bbe\u0b95 \u0b9a\u0bc7\u0bae\u0bbf\u0b95\u0bcd\u0b95\u0baa\u0bcd\u0baa\u0b9f\u0bc1\u0b95\u0bbf\u0bb1\u0ba4\u0bc1 \u00b7 \u0b86\u0bb0\u0bbe\u0baf\u0bcd\u0b9a\u0bcd\u0b9a\u0bbf\u0b95\u0bcd\u0b95\u0bbe\u0b95 \u0bae\u0b9f\u0bcd\u0b9f\u0bc1\u0bae\u0bcd</span>`,
-      tg:`<span${tf}>\u0baa\u0bc7\u0bb0\u0bc1 collect \u0baa\u0ba3\u0bcd\u0bb1\u0ba4\u0bbf\u0bb2\u0bcd\u0bb2\u0bc8 \u00b7 Securely save \u0b86\u0b95\u0bc1\u0ba4\u0bc1 \u00b7 Research \u0bae\u0b9f\u0bcd\u0b9f\u0bc1\u0bae\u0bcd</span>`
-    };
-    const weAsk = {
-      en:'We ask about', ta:`<span${tf}>\u0ba8\u0bbe\u0bae\u0bcd \u0b95\u0bc7\u0b9f\u0bcd\u0baa\u0bb5\u0bc8</span>`, tg:`<span${tf}>\u0ba8\u0bbe\u0bae\u0bcd \u0b95\u0bc7\u0b95\u0bcd\u0b95\u0bb1\u0ba4\u0bc1</span>`
-    };
-    const weDont = {
-      en:"We don't ask", ta:`<span${tf}>\u0ba8\u0bbe\u0bae\u0bcd \u0b95\u0bc7\u0b9f\u0bcd\u0b95\u0bbe\u0ba4\u0bb5\u0bc8</span>`, tg:`<span${tf}>\u0ba8\u0bbe\u0bae\u0bcd \u0b95\u0bc7\u0b95\u0bcd\u0b95\u0bbe\u0ba4\u0ba4\u0bc1</span>`
-    };
-    const askItems = {
-      en:'AI awareness &amp; experience<br>Barriers to using AI<br>How you like to learn',
-      ta:`<span${tf}>AI \u0bb5\u0bbf\u0bb4\u0bbf\u0baa\u0bcd\u0baa\u0bc1\u0ba3\u0bb0\u0bcd\u0bb5\u0bc1<br>\u0ba4\u0b9f\u0bc8\u0b95\u0bb3\u0bcd<br>\u0b95\u0bb1\u0bcd\u0b95\u0bc1\u0bae\u0bcd \u0bae\u0bc1\u0bb1\u0bc8</span>`,
-      tg:`<span${tf}>AI \u0baa\u0ba4\u0bcd\u0ba4\u0bbf \u0b8e\u0ba9\u0bcd\u0ba9 \u0ba4\u0bc6\u0bb0\u0bbf\u0baf\u0bc1\u0bae\u0bcd<br>\u0b8e\u0ba9\u0bcd\u0ba9 \u0ba4\u0b9f\u0bc1\u0b95\u0bcd\u0b95\u0bc1\u0ba4\u0bc1<br>\u0b8e\u0baa\u0bcd\u0baa\u0b9f\u0bbf learn \u0baa\u0ba3\u0bcd\u0bb1\u0bc0\u0b99\u0bcd\u0b95</span>`
-    };
-    const dontAskItems = {
-      en:'Your name<br>Phone number<br>Any personal ID',
-      ta:`<span${tf}>\u0b89\u0b99\u0bcd\u0b95\u0bb3\u0bcd \u0baa\u0bc6\u0baf\u0bb0\u0bcd<br>\u0ba4\u0bca\u0bb2\u0bc8\u0baa\u0bc7\u0b9a\u0bbf \u0b8e\u0ba3\u0bcd<br>\u0b85\u0b9f\u0bc8\u0baf\u0bbe\u0bb3 \u0b86\u0bb5\u0ba3\u0bae\u0bcd</span>`,
-      tg:`<span${tf}>\u0b89\u0b99\u0bcd\u0b95\u0bb3\u0bcd \u0baa\u0bc7\u0bb0\u0bc1<br>Phone number<br>Personal ID \u0b8e\u0ba4\u0bc1\u0bb5\u0bc1\u0bae\u0bcd</span>`
+      en:'Your data is used only for the beta test · You can leave anytime · Contact: sas1924s@hs-coburg.de',
+      de:'Deine Daten werden nur für den Betatest genutzt · Du kannst jederzeit aufhören · Kontakt: sas1924s@hs-coburg.de'
     };
 
     return `
     <div class="slide" id="slide-${idx}" style="overflow-y:auto;max-height:calc(100vh - 90px)">
-
-      <!-- ── sketch zone: your Fresco PNGs go here ── -->
-      <div style="position:relative;height:160px;margin-bottom:8px;overflow:hidden">
-
-        <!-- left corner character — place your PNG at sketches/char-left.png -->
-        <img src="sketches/char-left.png" alt=""
-          style="position:absolute;left:-10px;top:0;height:160px;width:auto;object-fit:contain"
-          onerror="this.style.display='none'">
-
-        <!-- right corner character — place your PNG at sketches/char-right.png -->
-        <img src="sketches/char-right.png" alt=""
-          style="position:absolute;right:-10px;top:0;height:160px;width:auto;object-fit:contain"
-          onerror="this.style.display='none'">
-
-        <!-- pink floating accents (keep these — no sketch needed) -->
-        <!-- star top-left -->
-        <svg style="position:absolute;left:155px;top:12px" width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path d="M8 0v16M0 8h16M2.3 2.3l11.4 11.4M13.7 2.3L2.3 13.7" stroke="#e8186d" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-        <!-- star top-right -->
-        <svg style="position:absolute;right:155px;top:8px" width="13" height="13" viewBox="0 0 13 13" fill="none">
-          <path d="M6.5 0v13M0 6.5h13M1.9 1.9l9.2 9.2M11.1 1.9L1.9 11.1" stroke="#e8186d" stroke-width="1.8" stroke-linecap="round"/>
-        </svg>
-        <!-- centre star -->
-        <svg style="position:absolute;left:50%;top:10px;transform:translateX(-50%)" width="14" height="14" viewBox="0 0 14 14" fill="none">
-          <path d="M7 0v14M0 7h14M2 2l10 10M12 2L2 12" stroke="#e8186d" stroke-width="1.7" stroke-linecap="round"/>
-        </svg>
-        <!-- pink envelope bottom-left -->
-        <svg style="position:absolute;left:8px;top:110px" width="32" height="26" viewBox="0 0 32 26" fill="none">
-          <rect x="1" y="1" width="30" height="20" rx="4" stroke="#e8186d" stroke-width="2"/>
-          <path d="M1 5 L16 13 L31 5" stroke="#e8186d" stroke-width="2" stroke-linecap="round"/>
-          <path d="M10 21 L14 25 L19 19" stroke="#e8186d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        <!-- pink globe top-right area -->
-        <svg style="position:absolute;right:8px;top:12px" width="34" height="34" viewBox="0 0 34 34" fill="none">
-          <circle cx="17" cy="17" r="14" stroke="#e8186d" stroke-width="2.2"/>
-          <ellipse cx="17" cy="17" rx="7" ry="14" stroke="#e8186d" stroke-width="2.2"/>
-          <line x1="3" y1="17" x2="31" y2="17" stroke="#e8186d" stroke-width="2"/>
-          <line x1="6" y1="10" x2="28" y2="10" stroke="#e8186d" stroke-width="1.3" opacity=".6"/>
-          <line x1="6" y1="24" x2="28" y2="24" stroke="#e8186d" stroke-width="1.3" opacity=".6"/>
-        </svg>
-        <!-- pink share icon -->
-        <svg style="position:absolute;right:52px;top:16px" width="26" height="26" viewBox="0 0 26 26" fill="none">
-          <path d="M13 18V5 M7 11 L13 5 L19 11" stroke="#e8186d" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M3 20v4h20v-4" stroke="#e8186d" stroke-width="2.2" stroke-linecap="round"/>
-        </svg>
-        <!-- blue halftone dots — left -->
-        <svg style="position:absolute;left:120px;top:95px" width="44" height="34" viewBox="0 0 44 34" fill="none" opacity=".55">
-          <circle cx="6" cy="6" r="2.2" fill="#3b7bd4"/><circle cx="14" cy="6" r="2.2" fill="#3b7bd4"/>
-          <circle cx="22" cy="6" r="2.2" fill="#3b7bd4"/><circle cx="30" cy="6" r="2.2" fill="#3b7bd4"/>
-          <circle cx="6" cy="14" r="2.2" fill="#3b7bd4"/><circle cx="14" cy="14" r="2.2" fill="#3b7bd4"/>
-          <circle cx="22" cy="14" r="2.2" fill="#3b7bd4"/><circle cx="6" cy="22" r="2.2" fill="#3b7bd4"/>
-          <circle cx="14" cy="22" r="2.2" fill="#3b7bd4"/>
-        </svg>
-        <!-- blue halftone dots — right -->
-        <svg style="position:absolute;right:115px;top:90px" width="40" height="30" viewBox="0 0 40 30" fill="none" opacity=".5">
-          <circle cx="6" cy="6" r="2" fill="#3b7bd4"/><circle cx="14" cy="6" r="2" fill="#3b7bd4"/>
-          <circle cx="22" cy="6" r="2" fill="#3b7bd4"/><circle cx="30" cy="6" r="2" fill="#3b7bd4"/>
-          <circle cx="6" cy="14" r="2" fill="#3b7bd4"/><circle cx="14" cy="14" r="2" fill="#3b7bd4"/>
-          <circle cx="22" cy="14" r="2" fill="#3b7bd4"/>
-        </svg>
-        <!-- pink swoosh left -->
-        <svg style="position:absolute;left:130px;top:60px" width="100" height="38" viewBox="0 0 100 38" fill="none">
-          <path d="M0 32 Q40 8 100 14" stroke="#e8186d" stroke-width="2.4" stroke-linecap="round"/>
-        </svg>
-        <!-- pink swoosh right -->
-        <svg style="position:absolute;right:125px;top:56px" width="100" height="38" viewBox="0 0 100 38" fill="none">
-          <path d="M100 32 Q60 8 0 14" stroke="#e8186d" stroke-width="2.4" stroke-linecap="round"/>
-        </svg>
-      </div>
-
-      <!-- intro card -->
-      <div style="border:1.5px solid #f0e0ea;border-radius:14px;padding:20px 22px;margin-bottom:14px">
-
-        <!-- avatar + name -->
-        <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
-          <div style="width:52px;height:52px;border-radius:50%;border:2px solid #f0c0d8;overflow:hidden;flex-shrink:0;background:#fdf0f7;display:flex;align-items:center;justify-content:center;font-size:22px">
-            <img src="sketches/avatar.jpg" alt="Photo" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'">
-            🧑
-          </div>
-          <div>
-            <!-- ✏️ CHANGE: your name -->
-            <div style="font-size:16px;font-weight:600;color:#0f0f0f">Your Name Here</div>
-            <!-- ✏️ CHANGE: your college and city -->
-            <div style="font-size:13px;color:#737373;margin-top:2px">Student · Your College Name · Germany</div>
-          </div>
+      <div style="text-align:center;font-size:48px;margin-bottom:12px">🌤️</div>
+      <div class="cover-title">${lang==='en' ? 'BreezyBuddy<br><span style="font-size:0.6em;color:var(--muted)">Beta Tester Onboarding</span>' : 'BreezyBuddy<br><span style="font-size:0.6em;color:var(--muted)">Beta-Tester Onboarding</span>'}</div>
+      <div class="cover-sub">${purpose[lang]}</div>
+      <div style="display:flex;gap:24px;margin-bottom:24px;font-size:13px">
+        <div style="flex:1;padding:12px;border-radius:var(--radius);background:var(--accent-light)">
+          <strong>${lang==='en' ? 'What we ask' : 'Was wir fragen'}</strong><br>
+          ${lang==='en' ? 'Device type · Language · Study interests<br>Feedback preferences · Notification style' : 'Gerätetyp · Sprache · Studieninteressen<br>Feedback-Präferenzen · Benachrichtigungsstil'}
         </div>
-
-        <!-- why this survey block -->
-        <div style="background:#fdf0f7;border-radius:9px;padding:14px 16px;margin-bottom:14px">
-          <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <rect x="1" y="1" width="14" height="14" rx="3" stroke="#e8186d" stroke-width="1.6"/>
-              <line x1="4" y1="5.5" x2="12" y2="5.5" stroke="#e8186d" stroke-width="1.5" stroke-linecap="round"/>
-              <line x1="4" y1="8" x2="12" y2="8" stroke="#e8186d" stroke-width="1.5" stroke-linecap="round"/>
-              <line x1="4" y1="10.5" x2="9" y2="10.5" stroke="#e8186d" stroke-width="1.5" stroke-linecap="round"/>
-            </svg>
-            <span style="font-size:12px;font-weight:600;color:#e8186d;letter-spacing:.04em;text-transform:uppercase">
-              ${lang==='en'?'Why this survey?':lang==='ta'?`<span${tf}>ஏன் இந்த ஆய்வு?</span>`:`<span${tf}>ஏன் இந்த survey?</span>`}
-            </span>
-          </div>
-          <div style="font-size:14px;line-height:1.72;color:#3a2030">
-            ${purpose[lang]}
-          </div>
-        </div>
-
-        <!-- divider -->
-        <div style="height:1px;background:#f0e0ea;margin-bottom:14px"></div>
-
-        <!-- contact -->
-        <div style="font-size:12px;color:#aaa;margin-bottom:8px">
-          ${lang==='en'?'Contact me':'<span'+tf+'>'+( lang==='ta'?'தொடர்பு கொள்ளவும்':'Contact பண்ணுங்க')+'</span>'}
-        </div>
-        <div style="display:flex;flex-direction:column;gap:8px">
-
-          <!-- email -->
-          <div style="display:flex;align-items:center;gap:12px;padding:11px 14px;background:#fdf5fa;border:1px solid #f0e0ea;border-radius:9px">
-            <svg width="20" height="16" viewBox="0 0 20 16" fill="none">
-              <rect x="1" y="1" width="18" height="14" rx="3" stroke="#e8186d" stroke-width="1.8"/>
-              <path d="M1 4 L10 9.5 L19 4" stroke="#e8186d" stroke-width="1.8" stroke-linecap="round"/>
-            </svg>
-            <div>
-              <div style="font-size:11px;color:#aaa;margin-bottom:1px">Email</div>
-              <!-- ✏️ CHANGE: your email -->
-              <a href="mailto:yourname@gmail.com" style="font-size:14px;font-weight:500;color:#e8186d;text-decoration:none">yourname@gmail.com</a>
-            </div>
-          </div>
-
-          <!-- whatsapp -->
-          <div style="display:flex;align-items:center;gap:12px;padding:11px 14px;background:#f2fbf5;border:1px solid #c8ecd4;border-radius:9px">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <circle cx="10" cy="10" r="9" stroke="#25d366" stroke-width="1.8"/>
-              <path d="M13.8 12.3c-.2-.1-1.2-.6-1.4-.7-.2-.1-.3-.1-.5.1-.1.2-.5.7-.6.8-.1.1-.2.1-.4 0-.2-.1-.8-.3-1.6-1-.6-.5-1-1.2-1.1-1.4-.1-.2 0-.3.1-.4l.3-.4c.1-.1.1-.2.2-.3 0-.1 0-.2 0-.3L8.5 7.4c-.1-.3-.3-.3-.4-.3h-.4c-.1 0-.3.1-.5.3-.2.2-.6.6-.6 1.5 0 .9.6 1.7.7 1.8.1.1 1.3 2 3.1 2.8.4.2.8.3 1 .4.4.1.8.1 1.1.1.3 0 1-.4 1.1-.8.1-.4.1-.7 0-.8z" fill="#25d366"/>
-            </svg>
-            <div>
-              <div style="font-size:11px;color:#aaa;margin-bottom:1px">WhatsApp</div>
-              <!-- ✏️ CHANGE: your number -->
-              <a href="https://wa.me/491234567890" style="font-size:14px;font-weight:500;color:#25d366;text-decoration:none">+49 123 456 7890</a>
-            </div>
-          </div>
-
+        <div style="flex:1;padding:12px;border-radius:var(--radius);background:#f0f0f0">
+          <strong>${lang==='en' ? 'What we don\'t' : 'Was wir nicht fragen'}</strong><br>
+          ${lang==='en' ? 'Passwords · Location tracking<br>Any data shared with third parties' : 'Passwörter · Standort-Tracking<br>Keine Daten an Dritte weitergegeben'}
         </div>
       </div>
+      <button class="start-btn" onclick="go(1)">${btnText}</button>
+      <div style="margin-top:16px;font-size:11px;color:var(--muted)">${anonNote[lang]}</div>
+    </div>`;
+  }
 
-      <div style="font-size:12px;color:#bbb;text-align:center;margin-bottom:16px;line-height:1.6">${anonNote[lang]}</div>
-
-      <button class="start-btn" onclick="next()" style="width:100%;font-size:16px;padding:16px">${btnText}</button>
+  if (s.type === 'declined') {
+    return `
+    <div class="slide" id="slide-${idx}" style="text-align:center">
+      <img src="sketches/done-declined.png" alt=""
+        style="width:100%;max-width:400px;margin:0 auto 20px;display:block;border-radius:8px"
+        onerror="this.style.display='none'">
+      <div style="font-size:36px;margin-bottom:12px">🌧️</div>
+      <div class="cover-title">${lang==='en' ? 'No worries at all.' : 'Kein Problem.'}</div>
+      <div class="cover-sub">${lang==='en'
+        ? 'We totally respect that. BreezyBuddy will be here whenever you\'re ready — no pressure, no hard feelings.<br><br>Maybe the weather will bring you back someday. 🌤️'
+        : 'Wir respektieren das vollkommen. BreezyBuddy ist hier, wann immer du bereit bist — kein Druck, alles gut.<br><br>Vielleicht bringt das Wetter dich eines Tages zurück. 🌤️'}</div>
     </div>`;
   }
 
   if (s.type === 'done') {
     return `
     <div class="slide" id="slide-${idx}" style="text-align:center">
-      <div class="done-icon">🙏</div>
-      <div class="cover-title">
-        ${lang==='en' ? 'Thank you!'
-          : lang==='ta' ? '<span style="font-family:\'Noto Sans Tamil\',sans-serif">நன்றி!</span>'
-          : '<span style="font-family:\'Noto Sans Tamil\',sans-serif">நன்றி! Super!</span>'}
-      </div>
-      <div class="cover-sub${tclass}"${tf}>
-        ${lang==='en'
-          ? 'Your response has been recorded. This will help make AI more accessible in Tamil Nadu.'
-          : lang==='ta'
-          ? 'உங்கள் பதில் பதிவு செய்யப்பட்டது. இது தமிழ்நாட்டில் AI-ஐ அணுகக்கூடியதாக மாற்ற உதவும்.'
-          : 'உங்கள் response save ஆச்சு. Tamil Nadu-ல AI accessible ஆக்க இது உதவும்.'}
-      </div>
+      <img src="sketches/done-sunset.png"
+        alt="" style="width:100%;max-width:500px;margin:0 auto 16px;display:block;border-radius:8px"
+        onerror="this.style.display='none'">
+      <div class="done-icon">🎉</div>
+      <div class="cover-title">${lang==='en' ? 'You\'re all set!' : 'Alles bereit!'}</div>
+      <div class="cover-sub">${lang==='en'
+        ? 'Thank you! We\'ll reach out soon with your BreezyBuddy installation. In the meantime — maybe look out the window? The weather might have a surprise for you. 🌤️'
+        : 'Danke! Wir melden uns bald bei dir für die BreezyBuddy-Installation. Schau in der Zwischenzeit vielleicht mal aus dem Fenster — das Wetter könnte eine Überraschung für dich haben. 🌤️'}</div>
+      <div id="done-status"></div>
+      <div id="done-actions"></div>
     </div>`;
   }
 
-  // normal question
-  const qText = s.q[lang];
-  const subText = s.sub ? s.sub[lang] : null;
-  const ans = answers[s.id];
-
-  let html = `<div class="slide" id="slide-${idx}">`;
-
-  // sketch at start of section
-  if (s.sketch) {
-    html += sketchImg(s.sketch, '800x200');
-  }
-
-  // section label
-  if (s.sec) {
-    html += `<div class="sec-label${tclass}"${tf}>${s.sec[lang]}</div>`;
-  }
-
-  // trap badge
-  if (s.trap === 'attention') {
-    html += `<div class="trap-badge">⚡ Attention check</div>`;
-  } else if (s.trap === 'reverse') {
-    html += `<div class="trap-badge">↩ Reverse-worded question</div>`;
-  }
+  // section label (must live INSIDE the slide, otherwise every section's
+  // label renders in normal flow and they all overlap each other + the question)
+  const sec = s.sec ? `<div class="sec-label">${s.sec[lang] || s.sec.en}</div>` : '';
 
   // question
-  html += `<div class="q-text${tclass}"${tf}>${qText}</div>`;
-  if (subText) html += `<div class="q-sub${tclass}"${tf}>${subText}</div>`;
+  const qText = s.q[lang] || s.q.en;
+  const subText = s.sub ? (s.sub[lang] || s.sub.en) : '';
 
-  // answer area
+  let html = `<div class="slide" id="slide-${idx}">`;
+  html += sec;
+  // comic-strip sketch above the question text
+  if (SKETCH_MAP[s.id]) {
+    html += `<img src="sketches/q${String(s.id).padStart(2,'0')}-${SKETCH_MAP[s.id]}.png"
+      alt="" style="width:100%;max-width:500px;margin:0 auto 16px;display:block;border-radius:8px"
+      onerror="this.style.display='none'">`;
+  }
+  html += `<div class="q-text${tclass}">${qText}</div>`;
+  if (subText) html += `<div style="font-size:13px;color:var(--muted);margin-bottom:14px">${subText}</div>`;
+
+  // radio
   if (s.type === 'radio') {
-    const otherIdx = s.opts.length;
-    const isOtherSel = s.hasOther && typeof ans === 'string' && ans.startsWith('__other__');
-    html += `<div class="opts">`;
+    html += '<div class="opts opts-group">';
     s.opts.forEach((o, i) => {
-      const sel = ans === i ? 'selected' : '';
-      const otClass = (lang==='ta'||lang==='tg') ? ' ta' : '';
-      html += `<button class="opt${otClass} ${sel}" onclick="pick(${i})" ${tf}>
+      const label = o[lang] || o.en;
+      html += `<button type="button" class="opt${answers[s.id]===i?' selected':''}" onclick="pickRadio(${s.id},${i},this)">
+        <span class="opt-circle"></span><span class="opt-label">${label}</span>
+      </button>`;
+    });
+    if (s.hasOther) {
+      html += `<label class="opt other-label${typeof answers[s.id]==='string'?' selected':''}">
         <span class="opt-circle"></span>
-        <span class="opt-label">${o[lang]}</span>
-      </button>`;
-    });
-    if (s.hasOther) {
-      const otherLabel = lang==='ta'?'<span style="font-family:\'Noto Sans Tamil\',sans-serif">மற்றவை — உங்கள் பதிலை உள்ளிடவும்</span>':lang==='tg'?'<span style="font-family:\'Noto Sans Tamil\',sans-serif">வேற ஏதாவது — type பண்ணுங்க</span>':'Other — type your own';
-      const otherVal = isOtherSel ? (ans||'').replace('__other__','') : '';
-      const otherSel = isOtherSel ? 'selected' : '';
-      html += `<button class="opt ${otherSel}" onclick="pickOther()" style="flex-direction:column;align-items:flex-start;gap:6px">
-        <div style="display:flex;align-items:center;gap:10px;width:100%">
-          <span class="opt-circle"></span>
-          <span class="opt-label" ${tf}>${otherLabel}</span>
-        </div>
-        ${isOtherSel ? `<input id="other-input" type="text" value="${otherVal}"
-          oninput="saveOther()" onclick="event.stopPropagation()"
-          placeholder="${lang==='ta'?'இங்கே எழுதுங்கள்…':lang==='tg'?'இங்க type பண்ணுங்க…':'Write here…'}"
-          style="width:100%;padding:8px 10px;border-radius:7px;border:1.5px solid rgba(255,255,255,0.7);background:#fff;color:#0f0f0f;font-size:14px;font-family:inherit;outline:none">` : ''}
-      </button>`;
+        <input type="text" class="other-input" placeholder="${lang==='en'?'Other...':'Sonstiges...'}"
+          value="${typeof answers[s.id]==='string'?answers[s.id]:''}"
+          oninput="pickOther(${s.id},this.value,this)"
+          onfocus="pickOther(${s.id},this.value,this)">
+      </label>`;
     }
-    html += `</div>`;
+    html += '</div>';
   }
 
+  // check
   if (s.type === 'check') {
-    html += `<div class="opts">`;
-    const arr = ans || [];
+    html += '<div class="opts opts-group">';
+    const sel = answers[s.id] || [];
     s.opts.forEach((o, i) => {
-      const sel = arr.includes(i) ? 'selected' : '';
-      const otClass = (lang==='ta'||lang==='tg') ? ' ta' : '';
-      html += `<button class="opt${otClass} ${sel}" onclick="tog(${i})" ${tf}>
-        <span class="opt-sq"></span>
-        <span class="opt-label">${o[lang]}</span>
+      const label = o[lang] || o.en;
+      html += `<button type="button" class="opt${sel.includes(i)?' selected':''}" onclick="toggleCheck(${s.id},${i},this)">
+        <span class="opt-sq"></span><span class="opt-label">${label}</span>
       </button>`;
     });
     if (s.hasOther) {
-      const otherLabel = lang==='ta'?'<span style="font-family:\'Noto Sans Tamil\',sans-serif">மற்றவை — உங்கள் பதிலை உள்ளிடவும்</span>':lang==='tg'?'<span style="font-family:\'Noto Sans Tamil\',sans-serif">வேற ஏதாவது — type பண்ணுங்க</span>':'Other — type your own';
-      const hasOtherChecked = arr.includes('other');
-      const otherText = answers[s.id+'_other'] || '';
-      const otherSel = hasOtherChecked ? 'selected' : '';
-      html += `<button class="opt ${otherSel}" onclick="togOther()" style="flex-direction:column;align-items:flex-start;gap:6px">
-        <div style="display:flex;align-items:center;gap:10px;width:100%">
-          <span class="opt-sq"></span>
-          <span class="opt-label" ${tf}>${otherLabel}</span>
-        </div>
-        ${hasOtherChecked ? `<input id="other-check-input" type="text" value="${otherText}"
-          oninput="saveOtherCheck()" onclick="event.stopPropagation()"
-          placeholder="${lang==='ta'?'இங்கே எழுதுங்கள்…':lang==='tg'?'இங்க type பண்ணுங்க…':'Write here…'}"
-          style="width:100%;padding:8px 10px;border-radius:7px;border:1.5px solid rgba(255,255,255,0.7);background:#fff;color:#0f0f0f;font-size:14px;font-family:inherit;outline:none">` : ''}
-      </button>`;
+      html += `<label class="opt other-label${sel.includes('__other__')?' selected':''}">
+        <span class="opt-sq"></span>
+        <input type="text" class="other-input" placeholder="${lang==='en'?'Other...':'Sonstiges...'}"
+          value="${answers[s.id+'_other']||''}"
+          oninput="toggleOtherCheck(${s.id},this.value,this)"
+          onfocus="toggleOtherCheck(${s.id},this.value,this)">
+      </label>`;
     }
-    html += `</div>`;
-    if (s.maxSelect) {
-      html += `<div style="font-size:12px;color:#aaa;margin-top:8px">
-        ${lang==='ta' ? `<span${tf}>அதிகபட்சம் ${s.maxSelect} தேர்வுகள்</span>` : `Select up to ${s.maxSelect}`}
-      </div>`;
-    }
+    html += '</div>';
   }
 
+  // scale
   if (s.type === 'scale') {
-    const v = ans || 0;
-    html += `<div class="scale-wrap">
-      <div class="scale-row">`;
+    html += '<div class="scale-wrap"><div class="scale-row">';
     for (let i = 1; i <= 5; i++) {
-      html += `<button class="scale-btn ${v===i?'selected':''}" onclick="pick(${i})">${i}</button>`;
+      html += `<button type="button" class="scale-btn${answers[s.id]===i?' selected':''}" onclick="pickScale(${s.id},${i},this)">${i}</button>`;
     }
-    html += `</div>
-      <div class="scale-labels${isTa?' ta':''}"${tf}>
-        <span>${s.low[lang]}</span><span>${s.high[lang]}</span>
-      </div></div>`;
+    html += '</div>';
+    if (s.low || s.high) {
+      html += `<div class="scale-labels"><span>${s.low?(s.low[lang]||s.low.en):''}</span><span>${s.high?(s.high[lang]||s.high.en):''}</span></div>`;
+    }
+    html += '</div>';
   }
 
+  // text  (single-line <input> for name/email/phone so mobile shows the right
+  //         keyboard + autofill; multi-line <textarea> for everything else)
   if (s.type === 'text') {
-    const val = typeof ans === 'string' ? ans : '';
-    const ph = lang==='en' ? '(Optional — answer in any language)'
-      : lang==='ta' ? '(விரும்பினால் — எந்த மொழியிலும் சரி)'
-      : '(Optional — எந்த மொழியிலும் சரி)';
-    html += `<textarea class="q-textarea" id="ta-${s.id}" placeholder="${ph}" oninput="saveText()">${val}</textarea>`;
+    const ph = lang==='en' ? 'Type here...' : 'Hier tippen...';
+    const idRef = typeof s.id==='number' ? s.id : `'${s.id}'`;
+    const a = INPUT_ATTRS[s.id];
+    if (a) {
+      const val = String(answers[s.id] || '').replace(/"/g,'&quot;');
+      html += `<input class="q-input" type="${a.type}"
+        ${a.inputmode ? `inputmode="${a.inputmode}"` : ''} ${a.autocomplete ? `autocomplete="${a.autocomplete}"` : ''}
+        placeholder="${ph}" value="${val}"
+        oninput="answers[${idRef}]=this.value">`;
+    } else {
+      html += `<textarea class="q-textarea" rows="3" placeholder="${ph}"
+        oninput="answers[${idRef}]=this.value">${answers[s.id]||''}</textarea>`;
+    }
   }
 
-  html += `</div>`;
+  html += '</div>';
   return html;
-}
-
-function buildAll() {
-  stage.innerHTML = SLIDES.map((s, i) => renderSlide(s, i)).join('');
-}
-
-function showSlide(idx, dir) {
-  const slides = stage.querySelectorAll('.slide');
-  const prev = stage.querySelector('.slide.active');
-
-  if (prev) {
-    prev.classList.remove('active');
-    prev.classList.add(dir > 0 ? 'exit-up' : 'exit-down');
-    setTimeout(() => prev.classList.remove('exit-up', 'exit-down'), 300);
-  }
-
-  const next = slides[idx];
-  if (next) {
-    next.style.transform = dir > 0 ? 'translateY(28px)' : 'translateY(-28px)';
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        next.style.transform = '';
-        next.classList.add('active');
-      });
-    });
-  }
-
-  updateUI(idx);
-}
-
-function updateUI(idx) {
-  const s = SLIDES[idx];
-  const isSpecial = s.type === 'welcome' || s.type === 'done';
-  const total = SLIDES.filter(x => x.type !== 'welcome' && x.type !== 'done').length;
-  const qNum  = SLIDES.slice(1, idx).filter(x => x.type !== 'done').length;
-
-  // progress
-  const pct = isSpecial ? (s.type==='done' ? 100 : 0) : Math.round((qNum / total) * 100);
-  document.getElementById('progress-bar').style.width = pct + '%';
-
-  // counter
-  const ctr = document.getElementById('q-counter');
-  if (isSpecial) { ctr.textContent = ''; }
-  else { ctr.textContent = `${qNum} / ${total}`; }
-
-  // bottom bar
-  const bb = document.getElementById('bottombar');
-  const hint = document.getElementById('enter-hint');
-  bb.style.display = isSpecial ? 'none' : 'flex';
-  hint.style.display = isSpecial ? 'none' : 'block';
-
-  document.getElementById('err-msg').textContent = '';
-
-  // back button
-  document.getElementById('btn-back').style.visibility = idx <= 1 ? 'hidden' : 'visible';
-
-  // next button text
-  const btn = document.getElementById('btn-next');
-  const isLast = SLIDES[idx+1]?.type === 'done';
-  if (lang === 'ta') btn.textContent = isLast ? 'சமர்ப்பிக்க →' : 'அடுத்து →';
-  else if (lang === 'tg') btn.textContent = isLast ? 'Submit பண்ணு →' : 'அடுத்து →';
-  else btn.textContent = isLast ? 'Submit →' : 'Next →';
 }
 
 /* ══════════════════════════════════════════════════════════════
    INTERACTIONS
 ══════════════════════════════════════════════════════════════ */
-window.pick = function(v) {
-  answers[SLIDES[cur].id] = v;
-  const s = SLIDES[cur];
-  // CRITICAL: scope to current slide only — not all slides in DOM
-  const slide = document.getElementById('slide-' + cur);
-  if (!slide) return;
-  if (s.type === 'radio') {
-    slide.querySelectorAll('.opt').forEach((el, i) => {
-      el.classList.toggle('selected', i === v);
+function pickRadio(id, idx, el) {
+  answers[id] = idx;
+  el.closest('.opts-group').querySelectorAll('.opt').forEach(d => d.classList.remove('selected'));
+  el.classList.add('selected');
+  // auto-advance after short delay
+  setTimeout(() => { if (answers[id] === idx) next(); }, 350);
+}
+function pickOther(id, val, el) {
+  answers[id] = val;
+  el.closest('.opts-group').querySelectorAll('.opt').forEach(d => d.classList.remove('selected'));
+  el.closest('.opt').classList.add('selected');
+}
+function toggleCheck(id, idx, el) {
+  if (!answers[id]) answers[id] = [];
+  const arr = answers[id];
+  const pos = arr.indexOf(idx);
+  if (pos > -1) arr.splice(pos, 1); else arr.push(idx);
+  el.classList.toggle('selected');
+}
+function toggleOtherCheck(id, val, el) {
+  if (!answers[id]) answers[id] = [];
+  answers[id+'_other'] = val;
+  const arr = answers[id];
+  if (!arr.includes('__other__')) arr.push('__other__');
+  el.closest('.opt').classList.add('selected');
+}
+function pickScale(id, val, el) {
+  answers[id] = val;
+  el.closest('.scale-row').querySelectorAll('.scale-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  setTimeout(() => { if (answers[id] === val) next(); }, 350);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   NAVIGATION
+══════════════════════════════════════════════════════════════ */
+function buildAll() {
+  stage.innerHTML = SLIDES.map((s, i) => renderSlide(s, i)).join('');
+  attachFocusScroll();
+}
+
+/* On mobile the on-screen keyboard covers the lower half of the screen.
+   Scroll the focused field into the centre once the keyboard has opened. */
+function attachFocusScroll() {
+  document.querySelectorAll('.q-input, .q-textarea, .other-input').forEach(el => {
+    el.addEventListener('focus', () => {
+      setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
     });
-  } else if (s.type === 'scale') {
-    slide.querySelectorAll('.scale-btn').forEach((el, i) => {
-      el.classList.toggle('selected', (i + 1) === v);
-    });
-  }
-  document.getElementById('err-msg').textContent = '';
-};
-
-window.tog = function(i) {
-  const s = SLIDES[cur];
-  let arr = answers[s.id] || [];
-  const idx = arr.indexOf(i);
-  if (idx >= 0) {
-    arr.splice(idx, 1);
-  } else {
-    if (s.maxSelect && arr.length >= s.maxSelect) return;
-    arr.push(i);
-  }
-  answers[s.id] = [...arr];
-  // CRITICAL: scope to current slide only
-  const slide = document.getElementById('slide-' + cur);
-  if (!slide) return;
-  slide.querySelectorAll('.opt').forEach((el, j) => {
-    el.classList.toggle('selected', arr.includes(j));
   });
-  document.getElementById('err-msg').textContent = '';
-};
+}
 
-window.pickOther = function() {
-  const s = SLIDES[cur];
-  const wasOther = typeof answers[s.id] === 'string' && answers[s.id].startsWith('__other__');
-  answers[s.id] = wasOther ? undefined : '__other__';
-  // re-render opts
-  const slide = document.getElementById('slide-' + cur);
-  const allOpts = slide ? slide.querySelectorAll('.opt') : [];
-  allOpts.forEach((el, i) => {
-    if (i < s.opts.length) el.classList.toggle('selected', false);
-    else el.classList.toggle('selected', !wasOther);
+function showSlide(idx, dir) {
+  const slides = stage.querySelectorAll('.slide');
+  slides.forEach((sl, i) => {
+    sl.classList.remove('active', 'exit-up', 'exit-down');
+    if (i < idx) sl.classList.add('exit-up');
+    if (i > idx) sl.classList.add('exit-down');
+    if (i === idx) sl.classList.add('active');
   });
-  // re-render slide to show/hide text input
-  const el = document.getElementById('slide-'+cur);
-  if (el) { el.outerHTML = renderSlide(s, cur); showSlide(cur, 0); }
-  setTimeout(() => {
-    const inp = document.getElementById('other-input');
-    if (inp) inp.focus();
-  }, 80);
-};
+  // terminal (non-question) screens: welcome, declined, done
+  const isTerminal = x => x.type === 'welcome' || x.type === 'done' || x.type === 'declined';
+  // progress
+  const total = SLIDES.filter(x => !isTerminal(x)).length;
+  const done = Math.max(0, idx - 1);
+  document.getElementById('progress-bar').style.transform = 'scaleX(' + (done / total) + ')';
+  // counter
+  const s = SLIDES[idx];
+  document.getElementById('q-counter').textContent =
+    isTerminal(s) ? '' : `${done} / ${total}`;
+  // buttons
+  document.getElementById('btn-back').style.visibility = idx > 0 && s.type !== 'done' && s.type !== 'declined' ? 'visible' : 'hidden';
+  document.getElementById('btn-next').style.display = (s.type === 'done' || s.type === 'declined') ? 'none' : '';
+  const isLast = idx === SLIDES.findIndex(x => x.type === 'declined') - 1;
+  document.getElementById('btn-next').textContent =
+    s.type === 'welcome' ? (lang==='en'?'Start →':'Start →') :
+    isLast ? (lang==='en'?'Submit ✓':'Absenden ✓') :
+    (lang==='en'?'Next →':'Weiter →');
+}
 
-window.saveOther = function() {
-  const inp = document.getElementById('other-input');
-  if (inp) answers[SLIDES[cur].id] = '__other__' + inp.value;
-};
+function go(dir) {
+  const newIdx = cur + dir;
+  if (newIdx < 0 || newIdx >= SLIDES.length) return;
+  cur = newIdx;
+  showSlide(cur, dir);
+}
 
-window.togOther = function() {
+function next() {
   const s = SLIDES[cur];
-  let arr = answers[s.id] || [];
-  const hasIt = arr.includes('other');
-  if (hasIt) {
-    arr = arr.filter(x => x !== 'other');
-    delete answers[s.id + '_other'];
-  } else {
-    arr.push('other');
+  const errEl = document.getElementById('err-msg');
+  errEl.textContent = '';
+
+  // validate required
+  if (s.type === 'radio' && answers[s.id] === undefined) {
+    errEl.textContent = lang==='en' ? 'Please select an option' : 'Bitte wähle eine Option';
+    return;
   }
-  answers[s.id] = [...arr];
-  const el = document.getElementById('slide-'+cur);
-  if (el) { el.outerHTML = renderSlide(s, cur); showSlide(cur, 0); }
-  setTimeout(() => {
-    const inp = document.getElementById('other-check-input');
-    if (inp) inp.focus();
-  }, 80);
-};
-
-window.saveOtherCheck = function() {
-  const inp = document.getElementById('other-check-input');
-  if (inp) answers[SLIDES[cur].id + '_other'] = inp.value;
-};
-
-window.saveText = function() {
-  const s = SLIDES[cur];
-  const ta = document.getElementById(`ta-${s.id}`);
-  if (ta) answers[s.id] = ta.value;
-};
-
-window.next = function() {
-  const s = SLIDES[cur];
-
-  // save textarea
-  if (s.type === 'text') {
-    const ta = document.getElementById(`ta-${s.id}`);
-    if (ta) answers[s.id] = ta.value;
+  if (s.type === 'text' && !s.optional && (!answers[s.id] || !answers[s.id].trim())) {
+    errEl.textContent = lang==='en' ? 'Please enter a response' : 'Bitte gib eine Antwort ein';
+    return;
   }
-
-  // validate
-  const ans = answers[s.id];
-  const empty = ans === undefined || ans === null
-    || (Array.isArray(ans) && ans.length === 0)
-    || (s.type === 'text' && !ans && !s.optional);
-
-  if (empty && !s.optional && s.type !== 'text' && s.type !== 'welcome') {
-    const msg = lang === 'ta' ? 'பதில் அளிக்கவும்.'
-              : lang === 'tg' ? 'Answer பண்ணிட்டு போங்க.'
-              : 'Please answer before continuing.';
-    document.getElementById('err-msg').textContent = msg;
+  if (s.id === 3) {
+    const email = (answers[3] || '').trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      errEl.textContent = lang === 'en'
+        ? 'Please enter a valid email address'
+        : 'Bitte gib eine gültige E-Mail-Adresse ein';
+      return;
+    }
+  }
+  if (s.type === 'scale' && !answers[s.id]) {
+    errEl.textContent = lang==='en' ? 'Please select a value' : 'Bitte wähle einen Wert';
     return;
   }
 
-  // trap flag
-  if (s.trap === 'attention' && ans !== s.correctIdx) {
-    if (!flags.includes('trap')) flags.push('trap');
+  // check consent — if user declined, show respectful goodbye (NO data submitted)
+  if (s.id === 1 && answers[1] === 1) {
+    cur = SLIDES.findIndex(x => x.type === 'declined');
+    showSlide(cur, 1);
+    return;
   }
 
   // last question — submit
-  if (SLIDES[cur + 1]?.type === 'done') {
-    submitAnswers();
+  if (cur === SLIDES.findIndex(x => x.type === 'declined') - 1) {
+    submitSurvey();
     return;
   }
 
-  cur++;
-  // re-render current slide (language may differ if user switched)
-  const el = document.getElementById(`slide-${cur}`);
-  if (el) el.outerHTML = renderSlide(SLIDES[cur], cur);
-  showSlide(cur, 1);
-};
+  go(1);
+}
 
-window.go = function(dir) {
-  if (dir < 0 && cur <= 1) return;
-  cur += dir;
-  cur = Math.max(1, Math.min(SLIDES.length - 2, cur));
-  const el = document.getElementById(`slide-${cur}`);
-  if (el) el.outerHTML = renderSlide(SLIDES[cur], cur);
-  showSlide(cur, dir);
-};
-
-/* ── language switch ── */
-window.setLang = function(l, btn) {
+function setLang(l, btn) {
   lang = l;
   document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  // re-render current slide
-  const el = stage.querySelector(`#slide-${cur}`);
-  if (el) {
-    const newHTML = renderSlide(SLIDES[cur], cur);
-    const tmp = document.createElement('div');
-    tmp.innerHTML = newHTML;
-    el.outerHTML = newHTML;
-    showSlide(cur, 0);
-    // restore opacity immediately (no transition on lang switch)
-    const newEl = document.getElementById(`slide-${cur}`);
-    if (newEl) {
-      newEl.style.transition = 'none';
-      newEl.classList.add('active');
-      setTimeout(() => newEl.style.transition = '', 50);
-    }
-  }
-  updateUI(cur);
-};
+  buildAll();
+  showSlide(cur, 0);
+  // buildAll() wipes the done screen — repaint its status/buttons if we're there
+  if (SLIDES[cur] && SLIDES[cur].type === 'done' && lastDoc) updateDoneScreen(lastSubmitOk);
+}
 
-/* ── keyboard ── */
+// keyboard
 document.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    const ta = document.activeElement?.tagName === 'TEXTAREA';
-    if (!ta) { e.preventDefault(); next(); }
+  const onDone = SLIDES[cur] && SLIDES[cur].type === 'done';
+  // Admin shortcut: type "breezy" on the done screen to open the export panel
+  if (onDone && e.key.length === 1) {
+    keyBuffer = (keyBuffer + e.key.toLowerCase()).slice(-6);
+    if (keyBuffer === 'breezy') { keyBuffer = ''; showAdminPanel(); return; }
   }
-  if (e.key === 'ArrowLeft' || e.key === 'Backspace') {
-    if (document.activeElement?.tagName !== 'INPUT' &&
-        document.activeElement?.tagName !== 'TEXTAREA') {
-      go(-1);
-    }
+  // Enter advances (but never inside a multi-line textarea, where it adds a newline)
+  if (e.key === 'Enter' && !e.shiftKey && !(e.target && e.target.tagName === 'TEXTAREA')) {
+    e.preventDefault(); next();
   }
 });
 
 /* ══════════════════════════════════════════════════════════════
-   SUBMIT TO APPWRITE
+   SUBMIT
 ══════════════════════════════════════════════════════════════ */
-async function submitAnswers() {
-  // check flags
+async function submitSurvey() {
+  // Data collection order:
+  // 1. Appwrite (primary — currently unconfigured)
+  // 2. Google Sheets (active — fire-and-forget)
+  // 3. localStorage + JSON download (always runs as backup)
   const secs = Math.round((Date.now() - startTime) / 1000);
-  if (secs < 180) flags.push('fast');
-  // contradiction: Q3 (never used AI) but Q25 comfort >= 3
-  const q3 = answers[3], q25 = answers[25];
-  if ((q3 === 2 || q3 === 3) && q25 >= 3) flags.push('contradiction');
 
   const doc = {
-    q1_age:               optVal(1), q2_occupation:     optVal(2),
-    q3_used_ai:           optVal(3), q4_device:         optVal(6),
-    q5_language:          optVal(5), q6_location:       optVal(3),
-    q7_smartphone:        answers[7] || 0,
-    q8_apps:              arrVal(8),
-    q9_internet:          optVal(9),
-    q10_heard_from:       optVal(10),
-    q11_tools_tried:      arrVal(11),
-    q12_what_happened:    optVal(12),
-    q13_first_reaction:   optVal(13),
-    q7_trap_pass:         answers['ac'] === 1,
-    q14_ai_help:          arrVal(14),
-    q15_importance:       answers[15] || 0,
-    q16_career_belief:    answers[16] || 0,
-    q17_usage_freq:       optVal(17),
-    q18_ai_tasks:         arrVal(18),
-    q19_barriers:         arrVal(19),
-    q20_lang_barrier:     answers[20] || 0,
-    q21_reverse:          answers[21] || 0,
-    q22_embarrassed:      answers[22] || 0,
-    q23_tutorial_likely:  answers[23] || 0,
-    q24_trust_factors:    arrVal(24),
-    q25_ai_comfort:       answers[25] || 0,
-    q26_online_learning:  optVal(26),
-    q27_dropout_reason:   arrVal(27),
-    q28_topics:           arrVal(28),
-    q29_content_type:     arrVal(29),
-    q30_share_trigger:    arrVal(30),
-    q31_open_text:        answers[31] || '',
-    q32_open_english:     answers[32] || '',
-    lang,
+    consent:              optVal(1),
+    name:                 answers[2] || '',
+    email:                answers[3] || '',
+    device:               optVal(4),
+    android_version:      optVal(5),
+    notification_lang:    optVal(6),
+    notification_freq:    optVal(7),
+    personality_style:    optVal(8),
+    knows_api_key:        optVal(9),
+    willing_api_key:      optVal(10),
+    phone_usage_hours:    answers[11] || 0,
+    study_interests:      arrVal(12),
+    feedback_channel:     optVal(13),
+    feedback_frequency:   optVal(14),
+    whatsapp_number:      answers[15] || '',
+    uninstall_reason:     answers[16] || '',
+    other_thoughts:       answers[17] || '',
+    survey_lang:          lang,
     duration_secs:        secs,
-    flags:                flags.join(','),
     submitted_at:         new Date().toISOString(),
   };
+  lastDoc = doc;
 
+  // ── Primary: Appwrite ──────────────────────────────────────────────
+  const onlineOk = await sendToAppwrite(doc);
+
+  // ── Google Sheets (fire-and-forget; no-cors = opaque response) ──────
+  // Apps Script web app behind this URL appends each response as a row.
+  // Setup is documented in CLAUDE.md / git history (doPost handler).
+  const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbyHhCAsZs0dV3fIL8b6notIb_THBW9dsEFd6SKUV8HGpwmutCtZ_6lqx_82ag8CPAfr/exec';
+  try {
+    await fetch(SHEETS_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      body: JSON.stringify(doc)
+    });
+  } catch (err) {
+    console.error('Sheets error:', err);
+  }
+
+  // ── Fallback: generate downloadable JSON ────────────────────────────
+  const blob = new Blob([JSON.stringify(doc, null, 2)],
+    {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const downloadLinkEl = document.createElement('a');
+  downloadLinkEl.href = url;
+  downloadLinkEl.download = `breezybuddy-tester-${(doc.name||'tester').replace(/\s+/g,'-')}-${Date.now()}.json`;
+  downloadLinkEl.style.display = 'none';
+  document.body.appendChild(downloadLinkEl);
+  downloadLink = downloadLinkEl;   // remembered so the done-screen button can trigger it
+
+  // Store in localStorage as backup
+  const stored = JSON.parse(localStorage.getItem('bb_responses') || '[]');
+  stored.push(doc);
+  localStorage.setItem('bb_responses', JSON.stringify(stored));
+
+  lastSubmitOk = onlineOk;
+  cur = SLIDES.length - 1;
+  showSlide(cur, 1);
+  updateDoneScreen(onlineOk);
+}
+
+/* Returns true on a successful Appwrite write, false otherwise.
+   Skips the network call entirely while the config still holds placeholders. */
+async function sendToAppwrite(doc) {
+  if (!AW_PROJECT_ID || AW_PROJECT_ID.startsWith('PASTE_')) return false;
   try {
     const { Client, Databases, ID } = Appwrite;
     const client = new Client()
@@ -1347,13 +1008,122 @@ async function submitAnswers() {
       .setProject(AW_PROJECT_ID);
     const db = new Databases(client);
     await db.createDocument(AW_DATABASE_ID, AW_COLLECTION, ID.unique(), doc);
+    return true;
   } catch (err) {
     console.error('Appwrite error:', err);
-    // still show thank you — don't block respondent
+    return false;
+  }
+}
+
+/* Paints the status line + action buttons on the done screen. */
+function updateDoneScreen(onlineOk) {
+  const status  = document.getElementById('done-status');
+  const actions = document.getElementById('done-actions');
+  if (!status || !actions) return;
+  const configured = AW_PROJECT_ID && !AW_PROJECT_ID.startsWith('PASTE_');
+
+  if (onlineOk) {
+    status.textContent = lang==='en'
+      ? 'Your response was submitted successfully. ✓'
+      : 'Deine Antwort wurde erfolgreich übermittelt. ✓';
+  } else if (configured) {
+    // Appwrite is set up but the network call failed → offline
+    status.textContent = lang==='en'
+      ? '💾 Response saved locally. It will be submitted when you\'re back online.'
+      : '💾 Antwort lokal gespeichert. Sie wird übermittelt, sobald du wieder online bist.';
+  } else {
+    // No backend configured yet → the download/export is the real collection path
+    status.textContent = lang==='en'
+      ? '💾 Response saved on this device. Use the button below to download it.'
+      : '💾 Antwort auf diesem Gerät gespeichert. Lade sie über die Schaltfläche unten herunter.';
   }
 
-  cur = SLIDES.length - 1;
-  showSlide(cur, 1);
+  actions.innerHTML = '';
+  // Always offer the JSON download
+  const dl = document.createElement('button');
+  dl.className = 'done-action-btn';
+  dl.textContent = lang==='en' ? 'Download my response' : 'Meine Antwort herunterladen';
+  dl.onclick = () => { if (downloadLink) downloadLink.click(); };
+  actions.appendChild(dl);
+
+  // Offer a retry only when a real backend is configured but the send failed
+  if (!onlineOk && configured) {
+    const retry = document.createElement('button');
+    retry.className = 'done-action-btn secondary';
+    retry.textContent = lang==='en' ? 'Retry submission' : 'Erneut versuchen';
+    retry.onclick = () => retrySubmit(retry);
+    actions.appendChild(retry);
+  }
+}
+
+async function retrySubmit(btn) {
+  if (!lastDoc) return;
+  btn.disabled = true;
+  btn.textContent = lang==='en' ? 'Submitting…' : 'Wird gesendet…';
+  const ok = await sendToAppwrite(lastDoc);
+  lastSubmitOk = ok;
+  if (ok) updateDoneScreen(true);
+  else {
+    btn.disabled = false;
+    btn.textContent = lang==='en' ? 'Still offline — retry' : 'Noch offline — erneut versuchen';
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   ADMIN EXPORT  —  type "breezy" on the done screen
+══════════════════════════════════════════════════════════════ */
+function showAdminPanel() {
+  const rows = JSON.parse(localStorage.getItem('bb_responses') || '[]');
+  const existing = document.getElementById('admin-panel');
+  if (existing) existing.remove();
+
+  const panel = document.createElement('div');
+  panel.id = 'admin-panel';
+  panel.innerHTML = `
+    <div class="admin-card">
+      <div class="admin-title">📊 Stored responses on this device: ${rows.length}</div>
+      <div class="admin-actions">
+        <button class="done-action-btn" id="admin-csv">Download CSV</button>
+        <button class="done-action-btn" id="admin-json">Download JSON</button>
+        <button class="done-action-btn secondary" id="admin-close">Close</button>
+      </div>
+      <pre class="admin-pre">${rows.length ? escapeHtml(JSON.stringify(rows, null, 2)).slice(0, 6000) : 'No responses stored on this device yet.'}</pre>
+    </div>`;
+  document.body.appendChild(panel);
+
+  panel.addEventListener('click', e => { if (e.target === panel) panel.remove(); });
+  document.getElementById('admin-close').onclick = () => panel.remove();
+  document.getElementById('admin-csv').onclick = () =>
+    downloadBlob(responsesToCSV(rows), `breezybuddy-responses-${Date.now()}.csv`, 'text/csv');
+  document.getElementById('admin-json').onclick = () =>
+    downloadBlob(JSON.stringify(rows, null, 2), `breezybuddy-responses-${Date.now()}.json`, 'application/json');
+}
+
+/* Flattens all stored responses to CSV (union of keys, RFC-4180 quoting). */
+function responsesToCSV(rows) {
+  if (!rows.length) return '';
+  const keys = [];
+  rows.forEach(r => Object.keys(r).forEach(k => { if (!keys.includes(k)) keys.push(k); }));
+  const esc = v => {
+    const s = v == null ? '' : String(v);
+    return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  };
+  const lines = [keys.join(',')];
+  rows.forEach(r => lines.push(keys.map(k => esc(r[k])).join(',')));
+  return lines.join('\n');
+}
+
+function downloadBlob(content, filename, type) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 100);
+}
+
+function escapeHtml(s) {
+  return s.replace(/[&<>]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[c]));
 }
 
 function optVal(id) {
@@ -1374,6 +1144,7 @@ function arrVal(id) {
 ══════════════════════════════════════════════════════════════ */
 buildAll();
 showSlide(0, 1);
+
 </script>
 </body>
 </html>
