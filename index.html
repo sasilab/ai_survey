@@ -247,6 +247,17 @@ body {
 .q-input { min-height: 52px; }
 .q-textarea:focus, .q-input:focus { outline: none; border-color: var(--accent); }
 
+/* WhatsApp number: country-code selector + phone input */
+.wa-row { display: flex; gap: 8px; margin-top: 20px; }
+.wa-select {
+  flex: 0 0 auto; min-height: 52px; padding: 0 10px;
+  border: 1.5px solid var(--border); border-radius: var(--radius);
+  background: var(--surface); color: var(--text);
+  font-size: 16px; font-family: var(--font);
+}
+.wa-select:focus { outline: none; border-color: var(--accent); }
+.wa-input { flex: 1; min-width: 0; margin-top: 0; }
+
 /* pink dot accent on section label */
 .sec-label::before {
   content: ''; display: inline-block;
@@ -310,9 +321,7 @@ body {
 .start-btn:hover { opacity: .85; }
 .done-icon { font-size: 48px; margin-bottom: 16px; }
 
-/* ── done-screen actions + status ── */
-#done-status { font-size: 14px; color: var(--muted); line-height: 1.5; margin-top: 4px; }
-#done-actions { display: flex; flex-direction: column; gap: 10px; align-items: center; margin-top: 22px; }
+/* ── action buttons (used by the admin export panel) ── */
 .done-action-btn {
   padding: 12px 24px; min-height: 44px; border-radius: var(--radius);
   background: var(--accent); color: var(--accent-inv); border: none;
@@ -403,11 +412,11 @@ const SKETCH_MAP = {
 };
 
 /* Single-line text questions that need a specific mobile keyboard / autofill.
-   Anything not listed here renders as a multi-line <textarea>. */
+   Anything not listed here renders as a multi-line <textarea>.
+   (Q15 / WhatsApp is handled separately — country-code selector + phone input.) */
 const INPUT_ATTRS = {
   2:  { type:'text',  autocomplete:'name' },                       // name
   3:  { type:'email', inputmode:'email', autocomplete:'email' },   // email
-  15: { type:'tel',   inputmode:'tel',   autocomplete:'tel' },     // WhatsApp number
 };
 
 const SLIDES = [
@@ -598,6 +607,7 @@ let lastDoc      = null;   // most recently built response document
 let downloadLink = null;   // hidden <a> that downloads lastDoc as JSON
 let lastSubmitOk = false;  // whether the last Appwrite submit succeeded
 let keyBuffer    = '';     // captures the "breezy" admin shortcut on the done screen
+let waCountry    = '+49';  // WhatsApp country code (UI helper; combined into the number on submit)
 
 /* ══════════════════════════════════════════════════════════════
    RENDER ENGINE
@@ -669,8 +679,6 @@ function renderSlide(s, idx) {
       <div class="cover-sub">${lang==='en'
         ? 'Thank you! We\'ll reach out soon with your BreezyBuddy installation. In the meantime — maybe look out the window? The weather might have a surprise for you. 🌤️'
         : 'Danke! Wir melden uns bald bei dir für die BreezyBuddy-Installation. Schau in der Zwischenzeit vielleicht mal aus dem Fenster — das Wetter könnte eine Überraschung für dich haben. 🌤️'}</div>
-      <div id="done-status"></div>
-      <div id="done-actions"></div>
     </div>`;
   }
 
@@ -755,7 +763,20 @@ function renderSlide(s, idx) {
     const ph = lang==='en' ? 'Type here...' : 'Hier tippen...';
     const idRef = typeof s.id==='number' ? s.id : `'${s.id}'`;
     const a = INPUT_ATTRS[s.id];
-    if (a) {
+    if (s.id === 15) {
+      // WhatsApp number: country-code selector + phone input.
+      // The code lives in `waCountry` (UI helper); answers[15] holds only the digits.
+      const codes = [['+49','+49 (Germany)'],['+91','+91 (India)'],['+43','+43 (Austria)'],
+                     ['+41','+41 (Switzerland)'],['+44','+44 (UK)'],['+1','+1 (USA/Canada)'],['','Other']];
+      const val = String(answers[15] || '').replace(/"/g,'&quot;');
+      html += `<div class="wa-row">
+        <select class="wa-select" onchange="waCountry=this.value">
+          ${codes.map(([v,l]) => `<option value="${v}"${waCountry===v?' selected':''}>${l}</option>`).join('')}
+        </select>
+        <input class="q-input wa-input" type="tel" inputmode="tel" placeholder="1512 3456789"
+          value="${val}" oninput="answers[15]=this.value">
+      </div>`;
+    } else if (a) {
       const val = String(answers[s.id] || '').replace(/"/g,'&quot;');
       html += `<input class="q-input" type="${a.type}"
         ${a.inputmode ? `inputmode="${a.inputmode}"` : ''} ${a.autocomplete ? `autocomplete="${a.autocomplete}"` : ''}
@@ -911,8 +932,6 @@ function setLang(l, btn) {
   btn.classList.add('active');
   buildAll();
   showSlide(cur, 0);
-  // buildAll() wipes the done screen — repaint its status/buttons if we're there
-  if (SLIDES[cur] && SLIDES[cur].type === 'done' && lastDoc) updateDoneScreen(lastSubmitOk);
 }
 
 // keyboard
@@ -954,7 +973,9 @@ async function submitSurvey() {
     study_interests:      arrVal(12),
     feedback_channel:     optVal(13),
     feedback_frequency:   optVal(14),
-    whatsapp_number:      answers[15] || '',
+    whatsapp_number:      (answers[15] && answers[15].trim())
+                            ? (waCountry ? waCountry + ' ' : '') + answers[15].trim()
+                            : '',
     uninstall_reason:     answers[16] || '',
     other_thoughts:       answers[17] || '',
     survey_lang:          lang,
@@ -991,7 +1012,8 @@ async function submitSurvey() {
   document.body.appendChild(downloadLinkEl);
   downloadLink = downloadLinkEl;   // remembered so the done-screen button can trigger it
 
-  // Store in localStorage as backup
+  // Store in localStorage as backup (silent — testers never see this).
+  // Sasikumar can export everything via the "breezy" admin shortcut.
   const stored = JSON.parse(localStorage.getItem('bb_responses') || '[]');
   stored.push(doc);
   localStorage.setItem('bb_responses', JSON.stringify(stored));
@@ -999,7 +1021,6 @@ async function submitSurvey() {
   lastSubmitOk = onlineOk;
   cur = SLIDES.length - 1;
   showSlide(cur, 1);
-  updateDoneScreen(onlineOk);
 }
 
 /* Returns true on a successful Appwrite write, false otherwise.
@@ -1017,60 +1038,6 @@ async function sendToAppwrite(doc) {
   } catch (err) {
     console.error('Appwrite error:', err);
     return false;
-  }
-}
-
-/* Paints the status line + action buttons on the done screen. */
-function updateDoneScreen(onlineOk) {
-  const status  = document.getElementById('done-status');
-  const actions = document.getElementById('done-actions');
-  if (!status || !actions) return;
-  const configured = AW_PROJECT_ID && !AW_PROJECT_ID.startsWith('PASTE_');
-
-  if (onlineOk) {
-    status.textContent = lang==='en'
-      ? 'Your response was submitted successfully. ✓'
-      : 'Deine Antwort wurde erfolgreich übermittelt. ✓';
-  } else if (configured) {
-    // Appwrite is set up but the network call failed → offline
-    status.textContent = lang==='en'
-      ? '💾 Response saved locally. It will be submitted when you\'re back online.'
-      : '💾 Antwort lokal gespeichert. Sie wird übermittelt, sobald du wieder online bist.';
-  } else {
-    // No backend configured yet → the download/export is the real collection path
-    status.textContent = lang==='en'
-      ? '💾 Response saved on this device. Use the button below to download it.'
-      : '💾 Antwort auf diesem Gerät gespeichert. Lade sie über die Schaltfläche unten herunter.';
-  }
-
-  actions.innerHTML = '';
-  // Always offer the JSON download
-  const dl = document.createElement('button');
-  dl.className = 'done-action-btn';
-  dl.textContent = lang==='en' ? 'Download my response' : 'Meine Antwort herunterladen';
-  dl.onclick = () => { if (downloadLink) downloadLink.click(); };
-  actions.appendChild(dl);
-
-  // Offer a retry only when a real backend is configured but the send failed
-  if (!onlineOk && configured) {
-    const retry = document.createElement('button');
-    retry.className = 'done-action-btn secondary';
-    retry.textContent = lang==='en' ? 'Retry submission' : 'Erneut versuchen';
-    retry.onclick = () => retrySubmit(retry);
-    actions.appendChild(retry);
-  }
-}
-
-async function retrySubmit(btn) {
-  if (!lastDoc) return;
-  btn.disabled = true;
-  btn.textContent = lang==='en' ? 'Submitting…' : 'Wird gesendet…';
-  const ok = await sendToAppwrite(lastDoc);
-  lastSubmitOk = ok;
-  if (ok) updateDoneScreen(true);
-  else {
-    btn.disabled = false;
-    btn.textContent = lang==='en' ? 'Still offline — retry' : 'Noch offline — erneut versuchen';
   }
 }
 
