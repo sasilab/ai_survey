@@ -124,39 +124,6 @@ body {
 .slide.exit-up   { opacity: 0; transform: translateY(-28px); }
 .slide.exit-down { opacity: 0; transform: translateY(28px); }
 
-/* ── sketch zone ── */
-.sketch-zone {
-  width: 100%; margin-bottom: 28px;
-  border-radius: var(--radius); overflow: hidden;
-  min-height: 140px;
-  display: flex; align-items: center; justify-content: center;
-}
-.sketch-zone img {
-  width: 100%; display: block;
-  border-radius: var(--radius);
-}
-.sketch-zone.placeholder {
-  border: 2px dashed #f0c0d8;
-  background: #fdf0f7; min-height: 140px;
-  flex-direction: column; gap: 8px;
-}
-.sketch-zone.placeholder::after {
-  font-size: 12px; color: var(--muted);
-  text-align: center; padding: 0 16px;
-}
-
-/* cover sketch */
-.sketch-cover { min-height: 180px; margin-bottom: 32px; }
-.sketch-cover.placeholder::after { content: '🎨  sketches/cover.png  (1200×360px)'; }
-.sketch-s1.placeholder::after  { content: '🎨  sketches/section-1.png  (800×200px)'; }
-.sketch-s2.placeholder::after  { content: '🎨  sketches/section-2.png  (800×200px)'; }
-.sketch-s3.placeholder::after  { content: '🎨  sketches/section-3.png  (800×200px)'; }
-.sketch-s4.placeholder::after  { content: '🎨  sketches/section-4.png  (800×200px)'; }
-.sketch-s5.placeholder::after  { content: '🎨  sketches/section-5.png  (800×200px)'; }
-.sketch-s6.placeholder::after  { content: '🎨  sketches/section-6.png  (800×200px)'; }
-.sketch-s7.placeholder::after  { content: '🎨  sketches/section-7.png  (800×200px)'; }
-.sketch-s8.placeholder::after  { content: '🎨  sketches/section-8.png  (800×200px)'; }
-
 /* ── section label ── */
 .sec-label {
   font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
@@ -176,6 +143,24 @@ body {
 .q-text.ta, .q-sub.ta, .opt-label.ta {
   font-family: var(--tamil-font);
 }
+
+/* ── informed-consent disclosure box (long, scrollable) ── */
+.consent-heading {
+  font-size: 16px; font-weight: 600; line-height: 1.45; margin-bottom: 12px;
+}
+.consent-box {
+  max-height: 40vh; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 14px 16px 16px; background: var(--surface);
+  /* subtle inner shadow at the bottom hints that there's more to scroll */
+  box-shadow: inset 0 -16px 14px -14px rgba(0,0,0,0.22);
+}
+.consent-list { margin: 0; padding-left: 20px; }
+.consent-list li {
+  font-size: 14px; font-weight: 400; line-height: 1.6;
+  color: var(--text); margin-bottom: 10px;
+}
+.consent-list li:last-child { margin-bottom: 0; }
 
 /* ── options ── */
 .opts { display: flex; flex-direction: column; gap: 8px; margin-top: 20px; }
@@ -433,8 +418,28 @@ const SLIDES = [
 /* ══ SECTION 1: INFORMED CONSENT ══ */
 { id:1, type:'radio',
   sec:{en:'Informed Consent', de:'Einwilligung'},
-  q:{en:'I understand that this is a beta test of BreezyBuddy. My feedback will be used to improve the app. I consent to participate voluntarily and can stop at any time.',
-     de:'Ich verstehe, dass dies ein Betatest von BreezyBuddy ist. Mein Feedback wird zur Verbesserung der App genutzt. Ich stimme der freiwilligen Teilnahme zu und kann jederzeit aufhören.'},
+  q:{en:`<div class="consent-heading">By participating in this beta test, you acknowledge and agree to the following:</div>
+<div class="consent-box"><ul class="consent-list">
+<li>This app is a beta version and may contain bugs or unexpected behavior.</li>
+<li>Your study topics and notification history are stored ONLY on your device. We never collect or access this data.</li>
+<li>If you choose to provide an API key (Gemini, Groq, or OpenAI), it is encrypted with AES-256 on your device and never transmitted to our servers. However, your prompts will be sent to the API provider you selected — subject to THEIR privacy policy.</li>
+<li>Location data (if granted) is used ONLY to fetch weather from Open-Meteo and is not stored or shared.</li>
+<li>Your survey responses (name, email, device info, preferences) will be stored in Google Sheets and temporarily on your device for beta test coordination only. All data will be deleted after the test period ends.</li>
+<li>The app sends AI-generated notifications. Despite our 3-layer safety filter, inappropriate content may occasionally appear. Please report any such instances.</li>
+<li>You can uninstall the app and withdraw from the test at any time without explanation.</li>
+<li>This is a university research project, not a commercial product. No warranties are provided.</li>
+</ul></div>`,
+     de:`<div class="consent-heading">Mit der Teilnahme an diesem Betatest bestätigst und akzeptierst du Folgendes:</div>
+<div class="consent-box"><ul class="consent-list">
+<li>Diese App ist eine Beta-Version und kann Fehler oder unerwartetes Verhalten aufweisen.</li>
+<li>Deine Lernthemen und Benachrichtigungshistorie werden AUSSCHLIESSLICH auf deinem Gerät gespeichert. Wir erheben oder greifen nie auf diese Daten zu.</li>
+<li>Wenn du einen API-Schlüssel (Gemini, Groq oder OpenAI) eingibst, wird er mit AES-256 auf deinem Gerät verschlüsselt und nie an unsere Server übertragen. Deine Anfragen werden jedoch an den gewählten API-Anbieter gesendet — deren Datenschutzrichtlinie gilt.</li>
+<li>Standortdaten (falls erlaubt) werden NUR für die Wetterabfrage bei Open-Meteo verwendet und nicht gespeichert oder weitergegeben.</li>
+<li>Deine Umfrageantworten (Name, E-Mail, Gerätedaten, Präferenzen) werden in Google Sheets und vorübergehend auf deinem Gerät für die Beta-Test-Koordination gespeichert. Alle Daten werden nach der Testphase gelöscht.</li>
+<li>Die App sendet KI-generierte Benachrichtigungen. Trotz unseres 3-stufigen Sicherheitsfilters können vereinzelt unangemessene Inhalte erscheinen. Bitte melde solche Fälle.</li>
+<li>Du kannst die App jederzeit deinstallieren und ohne Angabe von Gründen aus dem Test austreten.</li>
+<li>Dies ist ein Universitäts-Forschungsprojekt, kein kommerzielles Produkt. Es werden keine Garantien übernommen.</li>
+</ul></div>`},
   opts:[{en:'I agree and want to participate', de:'Ich stimme zu und möchte teilnehmen'},
         {en:'I do not agree',                  de:'Ich stimme nicht zu'}]},
 
