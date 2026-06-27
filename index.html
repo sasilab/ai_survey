@@ -110,6 +110,7 @@ body {
 .slide {
   position: absolute;
   width: 100%; max-width: 640px;
+  padding-left: 20px; padding-right: 20px;
   max-height: calc(100vh - 96px); overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   opacity: 0; pointer-events: none;
@@ -366,6 +367,8 @@ body {
   #bottombar { padding: 14px 16px calc(14px + env(safe-area-inset-bottom)); }
   .lang-btn { padding: 6px 12px; font-size: 12px; }
   #enter-hint { display: none; } /* no physical keyboard on phones */
+  /* welcome "What we ask / don't" boxes stack instead of cramming side by side */
+  .welcome-boxes { flex-direction: column; }
 }
 </style>
 </head>
@@ -635,11 +638,11 @@ function renderSlide(s, idx) {
     };
 
     return `
-    <div class="slide" id="slide-${idx}" style="overflow-y:auto;max-height:calc(100vh - 90px)">
-      <div style="text-align:center;font-size:48px;margin-bottom:12px">🌤️</div>
+    <div class="slide" id="slide-${idx}" style="overflow-y:auto;max-height:calc(100vh - 90px);padding-bottom:100px">
+      <div style="text-align:center;font-size:48px;margin-bottom:24px">🌤️</div>
       <div class="cover-title">${lang==='en' ? 'BreezyBuddy<br><span style="font-size:0.6em;color:var(--muted)">Beta Tester Onboarding</span>' : 'BreezyBuddy<br><span style="font-size:0.6em;color:var(--muted)">Beta-Tester Onboarding</span>'}</div>
-      <div class="cover-sub">${purpose[lang]}</div>
-      <div style="display:flex;gap:24px;margin-bottom:24px;font-size:13px">
+      <div class="cover-sub" style="margin-bottom:34px">${purpose[lang]}</div>
+      <div class="welcome-boxes" style="display:flex;gap:24px;margin-bottom:34px;font-size:13px">
         <div style="flex:1;padding:12px;border-radius:var(--radius);background:var(--accent-light)">
           <strong>${lang==='en' ? 'What we ask' : 'Was wir fragen'}</strong><br>
           ${lang==='en' ? 'Device type · Language · Study interests<br>Feedback preferences · Notification style' : 'Gerätetyp · Sprache · Studieninteressen<br>Feedback-Präferenzen · Benachrichtigungsstil'}
